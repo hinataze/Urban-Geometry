@@ -24,10 +24,9 @@
 
 int main(int argc, char *argv[])
         {
+            qDebug() << "Main" ;
             QApplication app(argc, argv);
-            qDebug() << "I " ;
-
-
+           
             QFont font("Segoe UI", 10); // You can choose a font that supports Japanese
             app.setFont(font);
 
