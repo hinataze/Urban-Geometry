@@ -33,8 +33,8 @@ MainWindow::MainWindow(QWidget *parent, QApplication *app) : QMainWindow(parent)
              this->menu_mode = menu_bar->addMenu(QStringLiteral("Mode"));
              this->dtAction_v = menu_mode->addAction("Delaunay Triangulation");
              this->ctAction_v = menu_mode->addAction("Constrained Delaunay Triangulation");
-             QObject::connect(dtAction_v, &QAction::triggered, app, [&]() {this->turn_flag_view(this->view_dt->flag_triangulation);});
-             QObject::connect(ctAction_v, &QAction::triggered, app, [&]() {this->turn_flag_view(this->view_dt->flag_ctriangulation);});
+             QObject::connect(dtAction_v, &QAction::triggered, app, [&]() {this->turn_flag_view(this->ptr_iv->flag_triangulation);});
+             QObject::connect(ctAction_v, &QAction::triggered, app, [&]() {this->turn_flag_view(this->ptr_iv->flag_ctriangulation);});
 
 
               //view
@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent, QApplication *app) : QMainWindow(parent)
               QAction* fitviewAction = menu_view->addAction("Fit View");
               QObject::connect(fitviewAction, &QAction::triggered, app, [&]() {this->fit_view();});
              this->view_voronoi_action = menu_view->addAction("Voronoi");
-              QObject::connect(view_voronoi_action, &QAction::triggered, app, [&]() {this->turn_flag_view(this->view_dt->flag_voronoi);});
+              QObject::connect(view_voronoi_action, &QAction::triggered, app, [&]() {this->turn_flag_view(this->ptr_iv->flag_voronoi);});
 
               
 
@@ -111,89 +111,89 @@ void MainWindow::turn_flag_view (bool &flag)
                   flag = flag != false ? false : true;
 
 
-                  if (&flag == &this->view_dt->flag_ctriangulation && this->view_dt->flag_ctriangulation == true)
-                      this->view_dt->flag_triangulation = false; // because in sync_flag_sets flag_triangulation comes first dont need to set that
+                  if (&flag == &this->ptr_iv->flag_ctriangulation && this->ptr_iv->flag_ctriangulation == true)
+                      this->ptr_iv->flag_triangulation = false; // because in sync_flag_sets flag_triangulation comes first dont need to set that
 
 
-                  if (&flag == &this->view_dt->flag_voronoi &&  this->view_dt->flag_voronoi ==true && this->view_dt->flag_triangulation == false)
+                  if (&flag == &this->ptr_iv->flag_voronoi &&  this->ptr_iv->flag_voronoi ==true && this->ptr_iv->flag_triangulation == false)
                      {
-                         this->view_dt->flag_voronoi = false;
+                         this->ptr_iv->flag_voronoi = false;
                          QMessageBox::warning(nullptr, "Warning", "Voronoi diagram is only available for DT. Select DT mode first.");
                      }
 
 
                   //TRIANGULATION
-                  if (view_dt->dt_.vertices_begin()!=view_dt->dt_.vertices_end())
+                  if (ptr_iv->dt_.vertices_begin()!=ptr_iv->dt_.vertices_end())
                   {
-                  if (this->view_dt->flag_triangulation)
+                  if (this->ptr_iv->flag_triangulation)
                      { qDebug() << "1";
-                       this->scene_.addItem(this->view_dt->triangulationItems.back());
-                       for (auto item : view_dt->textItems)
+                       this->scene_.addItem(this->ptr_iv->triangulationItems.back());
+                       for (auto item : ptr_iv->textItems)
                            this->scene_.addItem(item);
                      }
-                     else if (!this->view_dt->flag_triangulation)
+                     else if (!this->ptr_iv->flag_triangulation)
                              {
                               qDebug() << "2";
-                               for (auto item : view_dt->triangulationItems)
+                               for (auto item : ptr_iv->triangulationItems)
                                    this->scene_.removeItem(item);
 
-                               for (auto item : view_dt->textItems)
+                               for (auto item : ptr_iv->textItems)
                                    this->scene_.removeItem(item);
                              }
 
                   //CONSTRAINED
-                  if (view_dt->cdt_.vertices_begin()!=view_dt->cdt_.vertices_end())
+                  if (ptr_iv->cdt_.vertices_begin()!=ptr_iv->cdt_.vertices_end())
                      {
-                      if (this->view_dt->flag_ctriangulation)
+                      if (this->ptr_iv->flag_ctriangulation)
                          {
-                           this->scene_.addItem(view_dt->ctriangulationItem);
-                           for (auto item : view_dt->ctextItems)
+                           this->scene_.addItem(ptr_iv->ctriangulationItem);
+                           for (auto item : ptr_iv->ctextItems)
                                 this->scene_.addItem(item);
                          }
-                          else if (!this->view_dt->flag_ctriangulation)
+                          else if (!this->ptr_iv->flag_ctriangulation)
                                   {
-                                    this->scene_.removeItem(view_dt->ctriangulationItem);
+                                    this->scene_.removeItem(ptr_iv->ctriangulationItem);
 
-                                    for (auto item : view_dt->ctextItems)
+                                    for (auto item : ptr_iv->ctextItems)
                                         this->scene_.removeItem(item);
                                   }
                      }
 
                   //SHORTEST PATH
-                  if (view_dt->sp.sp_size())
+                  if (ptr_iv->sp.sp_size())
                      {
-                      if (this->view_dt->flag_spath)
+                      if (this->ptr_iv->flag_spath)
                          {
-                          for (auto & a : view_dt->sp.v_cdt_gi )
+                          for (auto & a : ptr_iv->sp.v_cdt_gi )
                               this->scene_.addItem(a);
 
-                          if (view_dt->sp.elipse_source != nullptr && view_dt->sp.elipse_target != nullptr)
+                          if (ptr_iv->sp.elipse_source != nullptr && ptr_iv->sp.elipse_target != nullptr)
                              {
-                              this->scene_.addItem(view_dt->sp.elipse_source);
-                              this->scene_.addItem(view_dt->sp.elipse_target);
+                              this->scene_.addItem(ptr_iv->sp.elipse_source);
+                              this->scene_.addItem(ptr_iv->sp.elipse_target);
                              }
                          }
-                          else if (!this->view_dt->flag_spath)
+                          else if (!this->ptr_iv->flag_spath)
                                   {
-                                    for (auto & a : view_dt->sp.v_cdt_gi )
+                                    for (auto & a : ptr_iv->sp.v_cdt_gi )
                                         this->scene_.removeItem(a);
 
-                                    this->scene_.removeItem(view_dt->sp.elipse_source);
-                                    this->scene_.removeItem(view_dt->sp.elipse_target);
+                                    this->scene_.removeItem(ptr_iv->sp.elipse_source);
+                                    this->scene_.removeItem(ptr_iv->sp.elipse_target);
                                   }
                      }
 
                    //VORONOI
-                  if (this->view_dt->flag_voronoi)
-                      this->scene_.addItem(this->view_dt->voronoiItem);
-                      else if (!this->view_dt->flag_voronoi)
-                              this->scene_.removeItem(this->view_dt->voronoiItem);
+                  if (this->ptr_iv->flag_voronoi)
+                      this->scene_.addItem(this->ptr_iv->voronoiItem);
+                      else if (!this->ptr_iv->flag_voronoi)
+                              this->scene_.removeItem(this->ptr_iv->voronoiItem);
                   }
 
-                  if (&flag != &this->view_dt->flag_voronoi) // inside sync_flag_sets we toggle textview for dt
-                      this->view_dt->sync_flag_sets ();
-                  this->view_dt->scene_refresh();
-                  this->view_dt->update();
+                  if (&flag != &this->ptr_iv->flag_voronoi) // inside sync_flag_sets we toggle textview for dt
+                      this->ptr_iv->sync_flag_sets ();
+                  this->ptr_iv->scene_refresh();
+                  this->ptr_iv->update();
                  }
 
 void MainWindow::turn_flag_edit (bool &flag)
@@ -221,11 +221,11 @@ void MainWindow::openFile (bool flag_start)
                      }
                       else
                          {
-                           QMessageBox::information(nullptr, "Open File", this->view_dt->message_qs_open);
+                           QMessageBox::information(nullptr, "Open File", this->ptr_iv->message_qs_open);
                            QMessageBox::information(nullptr, "Information", "Open the file containing the nodes.");
                            filePath_vertices = QFileDialog::getOpenFileName(this, "Open File", QDir::homePath());
 
-                           if (!this->view_dt->flag_triangulation)
+                           if (!this->ptr_iv->flag_triangulation)
                            {
                                QMessageBox::information(nullptr, "Information", "Now open the file containing the links.");
                                filePath_edges = QFileDialog::getOpenFileName(this, "Open File", QDir::homePath());
@@ -268,17 +268,17 @@ void MainWindow::openFile (bool flag_start)
                           map_id_links = openfile_GeoJson(filePath_edges);
                           this->openfile_insertpoints_gjson(map_id_nodes);
                           this->openfile_insertedges_gjson(map_id_links, map_id_nodes);
-                          qDebug() << " now 1 " << view_dt;
+                          qDebug() << " now 1 " << ptr_iv;
                       }
-                      qDebug() << " now 2 " << view_dt ;
+                      qDebug() << " now 2 " << ptr_iv ;
                   }
 
-                  qDebug() << " now 3 " << view_dt;
-                  if ( view_dt != nullptr)
+                  qDebug() << " now 3 " << ptr_iv;
+                  if ( ptr_iv != nullptr)
                   {
-                      qDebug() << " view_dt != nullptr "  << view_dt;
+                      qDebug() << " ptr_iv != nullptr "  << ptr_iv;
                       this->view_refresh();
-                      this->view_dt->fitInView(this->view_dt->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
+                      this->ptr_iv->fitInView(this->ptr_iv->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
                   }
 
                   qDebug() << "MainWindow::openFile exit " ;
@@ -287,7 +287,7 @@ void MainWindow::openFile (bool flag_start)
 void MainWindow::fit_view()
                 {
                   qDebug() << "MainWindow::fit_view " ;
-                  this->view_dt->fitInView(this->view_dt->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
+                  this->ptr_iv->fitInView(this->ptr_iv->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
                 }
 
 bool MainWindow::isGeoJson (const QString filePath)
@@ -424,32 +424,32 @@ std::vector <std::pair <double, double>> MainWindow::openfile_txt  (QString path
 void MainWindow::openfile_insertpoints_txt (std::vector <std::pair <double, double>> &vpts)
                 {
                   qDebug()<< "MainWindow::openfile_insertpoints_txt";
-                   view_dt->dt_.clear();
+                   ptr_iv->dt_.clear();
                    for (auto & a : vpts)
                        {
-                           view_dt->dt_.insert (Point_2 (a.first, a.second));
-                           view_dt->cdt_.insert (Point_2 (a.first, a.second));
+                           ptr_iv->dt_.insert (Point_2 (a.first, a.second));
+                           ptr_iv->cdt_.insert (Point_2 (a.first, a.second));
                        }
                 }
 void MainWindow::openfile_insertpoints_gjson (std::map <QString, std::pair <QString, QString>>  &vpts)
                 {
                   qDebug()<< "MainWindow::openfile_insertpoints_gjson";
-                   view_dt->dt_.clear();
+                   ptr_iv->dt_.clear();
                    for (auto & a : vpts)
                        {
-                          view_dt->dt_.insert (Point_2 (a.second.first.toDouble(), a.second.second.toDouble()));
-                          view_dt->cdt_.insert (Point_2(a.second.first.toDouble(), a.second.second.toDouble()));
+                          ptr_iv->dt_.insert (Point_2 (a.second.first.toDouble(), a.second.second.toDouble()));
+                          ptr_iv->cdt_.insert (Point_2(a.second.first.toDouble(), a.second.second.toDouble()));
                          // qDebug() << Point_2 (a.second.first.toDouble(), a.second.second.toDouble()) ;
                           //qDebug() << Point_2 (a.second.first.toDouble(), a.second.second.toDouble()) ;
                        }
                    int numberOfPoints = 0;
-                      for (auto v =  view_dt->dt_.finite_vertices_begin(); v !=  view_dt->dt_.finite_vertices_end(); ++v)
+                      for (auto v =  ptr_iv->dt_.finite_vertices_begin(); v !=  ptr_iv->dt_.finite_vertices_end(); ++v)
                       {
                           numberOfPoints++;
                       }
 
                       int numberOfPointscdt = 0;
-                         for (auto v =  view_dt->cdt_.finite_vertices_begin(); v !=  view_dt->cdt_.finite_vertices_end(); ++v)
+                         for (auto v =  ptr_iv->cdt_.finite_vertices_begin(); v !=  ptr_iv->cdt_.finite_vertices_end(); ++v)
                          {
                              numberOfPointscdt++;
                          }
@@ -463,7 +463,7 @@ void MainWindow::openfile_insertpoints_gjson (std::map <QString, std::pair <QStr
 void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, double>> &vegs, std::vector <std::pair <double, double>> &vpts)
                  {
                   qDebug()<< "MainWindow::openfile_insertedges_txt";
-                  view_dt->cdt_.clear();
+                  ptr_iv->cdt_.clear();
 
                   for (auto & a : vegs)
                       {
@@ -477,7 +477,7 @@ void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, doubl
 
                        try
                          {
-                           view_dt->cdt_.insert_constraint (point_source, point_target);
+                           ptr_iv->cdt_.insert_constraint (point_source, point_target);
                          }
                          catch (const std::exception& e)
                                {
@@ -485,14 +485,14 @@ void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, doubl
                                // break;
                                }
                        }
-                  qDebug() << "is valid? " << view_dt->cdt_.is_valid() ;
+                  qDebug() << "is valid? " << ptr_iv->cdt_.is_valid() ;
                  }
 
 //from geoson
 void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QString, QString>> &vegs, std::map <QString, std::pair <QString, QString>>  &vpts)
                  {
                   qDebug()<< "MainWindow::openfile_insertedges_geojson";
-                  view_dt->cdt_.clear();
+                  ptr_iv->cdt_.clear();
 
                   qDebug() <<"nodes to insert: "<< vegs.size() << ", links to insert: " <<vpts.size() ;
 
@@ -509,7 +509,7 @@ void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QStri
 
                        try
                          {
-                           view_dt->cdt_.insert_constraint (point_source, point_target);
+                           ptr_iv->cdt_.insert_constraint (point_source, point_target);
                          }
                          catch (const std::exception& e)
                                {
@@ -517,14 +517,14 @@ void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QStri
                                 //break;
                                }
                        }
-                  qDebug() << "is valid? " << view_dt->cdt_.is_valid() ;
+                  qDebug() << "is valid? " << ptr_iv->cdt_.is_valid() ;
                  }
 
 void MainWindow::view_refresh()
                  {
                    qDebug()<< "MainWindow::view_refresh";
-                   if (view_dt != nullptr)
-                   view_dt->scene_refresh();
+                   if (ptr_iv != nullptr)
+                   ptr_iv->scene_refresh();
 
                    qDebug()<< "MainWindow::view_refresh exit";
                  }
@@ -534,7 +534,7 @@ void MainWindow::save_files()
                  {
                   qDebug() << "MainWindow::save_files" ;
 
-                  if (this->view_dt->flag_triangulation)
+                  if (this->ptr_iv->flag_triangulation)
                   {
                       QMessageBox::information(nullptr, "Information", "Please chose the path to save the present delaunay triangulation. (Paths with Japanese characters are currently not supported!)");
                       QString filePath = QFileDialog::getSaveFileName(this, "Save Delaunay Triangulation", "", "Text Files (*.txt)");
@@ -561,7 +561,7 @@ void MainWindow::save_files()
                       return;
                      }
 
-                  for (Delaunay::Finite_vertices_iterator it = view_dt->dt_.finite_vertices_begin(); it != view_dt->dt_.finite_vertices_end(); ++it)
+                  for (Delaunay::Finite_vertices_iterator it = ptr_iv->dt_.finite_vertices_begin(); it != ptr_iv->dt_.finite_vertices_end(); ++it)
                      {
                       Point_2 p = it->point();
                       outputFile << p.x() << " " << p.y() << "\n";
@@ -570,7 +570,7 @@ void MainWindow::save_files()
                       QMessageBox::information(nullptr, "Information", "Delaunay triangulation has been saved.");
                   }
 
-                  else if (!this->view_dt->flag_triangulation)
+                  else if (!this->ptr_iv->flag_triangulation)
                   {
                      //cdt vertices coordinates
                       //cdt constrains (vertex indices)
@@ -592,7 +592,7 @@ void MainWindow::save_files()
                          }
 
 
-                      for (auto it_v = view_dt->cdt_.finite_vertices_begin(); it_v != view_dt->cdt_.finite_vertices_end(); ++it_v)
+                      for (auto it_v = ptr_iv->cdt_.finite_vertices_begin(); it_v != ptr_iv->cdt_.finite_vertices_end(); ++it_v)
                           {
                           outputFile_v << it_v->point().x() << " " << it_v->point().y() <<"\n" ;
                           }
@@ -618,9 +618,9 @@ void MainWindow::save_files()
                           }
 
 
-                      for (auto e = view_dt->cdt_.finite_edges_begin(); e != view_dt->cdt_.finite_edges_end(); ++e)
+                      for (auto e = ptr_iv->cdt_.finite_edges_begin(); e != ptr_iv->cdt_.finite_edges_end(); ++e)
                           {
-                            if (view_dt->cdt_.is_constrained(*e))
+                            if (ptr_iv->cdt_.is_constrained(*e))
                                {
                                  for (int i = 1; i <= 2; ++i)
                                      {
@@ -629,7 +629,7 @@ void MainWindow::save_files()
                                        //outputFile << vertex_point << " " ;
 
                                        size_t count_vertex_index = 0;
-                                       for (auto vert = view_dt->cdt_.finite_vertices_begin(); vert != view_dt->cdt_.finite_vertices_end(); ++vert)
+                                       for (auto vert = ptr_iv->cdt_.finite_vertices_begin(); vert != ptr_iv->cdt_.finite_vertices_end(); ++vert)
                                            {
                                             if (vert->point() == v->point())
                                                {
@@ -650,13 +650,13 @@ void MainWindow::save_files()
 
                   //COORDINATES
                   QMessageBox::information(nullptr, "Information", "Please chose the file to save the shortest paths' nodes (coordinates).");
-                  QString filePath_coord = QFileDialog::getSaveFileName (view_dt, "Save Shortest paths", "", "Text Files (*.txt)");
+                  QString filePath_coord = QFileDialog::getSaveFileName (ptr_iv, "Save Shortest paths", "", "Text Files (*.txt)");
 
                   // INDICES
                   QMessageBox::information(nullptr, "Information", "Now chose the file to save the shortest paths' nodes (indices).");
-                  QString filePath_ids = QFileDialog::getSaveFileName(view_dt, "Save Shortest paths", "", "Text Files (*.txt)");
+                  QString filePath_ids = QFileDialog::getSaveFileName(ptr_iv, "Save Shortest paths", "", "Text Files (*.txt)");
 
-                  save_to_file_paths (filePath_ids, filePath_coord, view_dt);
+                  save_to_file_paths (filePath_ids, filePath_coord, ptr_iv);
                   QMessageBox::information(nullptr, "Information", "Files have been saved.");
                       }
 

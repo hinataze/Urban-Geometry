@@ -144,7 +144,7 @@ typedef CGAL::Direction_2<K> Direction;
 
 
 
-class InteractiveTriangulationView;
+class InteractiveViewTriangulation;
 
 class MainWindow;
 
@@ -165,7 +165,7 @@ class MainWindow : public QMainWindow
                   {
                     Q_OBJECT
 
-                    friend class InteractiveTriangulationView;
+                    friend class InteractiveViewTriangulation;
                     friend std::vector <std::pair <double, double>> openfile  (QString path);
 
                     public:
@@ -193,7 +193,7 @@ class MainWindow : public QMainWindow
 
                     void openEmailClient ();
 
-                    InteractiveTriangulationView * view_dt = nullptr ;
+                    InteractiveViewTriangulation * ptr_iv = nullptr ;
 
                     public slots:
 

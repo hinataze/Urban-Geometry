@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
 
 
-             InteractiveTriangulationView view (cdt, dt, mainWindow,  &mainWindow);
+             InteractiveViewTriangulation view (cdt, dt, mainWindow,  &mainWindow);
 
              QWidget centralWidget (&mainWindow);
 
@@ -96,7 +96,7 @@ HINT: Open your own files! This app accepts files in .geojson and .txt.)";
 
   QMessageBox::information(nullptr, "Colaborate!", "This is an open project, so any problems, comments or sugestions, please send them through the direct help email above!");
 
-  QMessageBox::information(nullptr, "Delaunay Triangulation", mainWindow.view_dt->message_qs_DT_start);
+  QMessageBox::information(nullptr, "Delaunay Triangulation", mainWindow.ptr_iv->message_qs_DT_start);
 
             return app.exec();
         }

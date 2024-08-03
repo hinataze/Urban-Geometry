@@ -34,16 +34,16 @@ typedef boost::graph_traits<Graph>::vertex_descriptor Boost_Vertex;
 void find_nearest_point (CDT::Vertex_handle &nearest_vertex, Point_2 pt , CDT  & cdt_);
 void find_nearest_point (Triangulation::Vertex_handle &nearest_vertex, Point_2 pt , Triangulation  & dt_);
 
-void shortest_path_2 (CDT &cdt_, InteractiveTriangulationView *);
+void shortest_path_2 (CDT &cdt_, InteractiveViewTriangulation *);
 
 void identify_target (CDT::Vertex_handle &source, CDT::Vertex_handle &target, std::pair <Point_2, Point_2> ppt, CDT & triangulation);
 void add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation);
 void add_edges (Graph & graph, std::map <CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation);
 void print_shortest_paths_all (Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map);
-void print_shortest_path_only (bool & flag_invalid_path, CDT::Vertex_handle & source, Boost_Vertex & target_vertex, Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT &, InteractiveTriangulationView * );
-void make_triangulation (bool & flag_invalid_path, Boost_Vertex & target_vertex, Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation, InteractiveTriangulationView *);
-void save_to_file_paths(QString, QString, InteractiveTriangulationView * ptr_view);
-void save_paths_coordinates (QString, std::vector <CDT> & v_paths, InteractiveTriangulationView * ptr_view);
-void save_paths_indices (QString, std::vector <std::vector<size_t>>& v_paths_ids, InteractiveTriangulationView * ptr_view);
+void print_shortest_path_only (bool & flag_invalid_path, CDT::Vertex_handle & source, Boost_Vertex & target_vertex, Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT &, InteractiveViewTriangulation * );
+void make_triangulation (bool & flag_invalid_path, Boost_Vertex & target_vertex, Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation, InteractiveViewTriangulation *);
+void save_to_file_paths(QString, QString, InteractiveViewTriangulation * ptr_view);
+void save_paths_coordinates (QString, std::vector <CDT> & v_paths, InteractiveViewTriangulation * ptr_view);
+void save_paths_indices (QString, std::vector <std::vector<size_t>>& v_paths_ids, InteractiveViewTriangulation * ptr_view);
 
 #endif // HS_SHORTEST_PATH_H

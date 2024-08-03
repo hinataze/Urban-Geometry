@@ -17,18 +17,18 @@
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>> Graph;
 typedef boost::graph_traits<Graph>::vertex_descriptor Boost_Vertex;
 
-class InteractiveTriangulationView : public QGraphicsView
+class InteractiveViewTriangulation : public QGraphicsView
                                    {
                                    Q_OBJECT
                                    friend class MainWindow;
 
-                                   friend void deletepoint (QPoint, InteractiveTriangulationView *);
-                                   friend void insertpoint (QPoint, InteractiveTriangulationView *);
-                                   friend void define_source_target (QPoint, InteractiveTriangulationView *);
+                                   friend void deletepoint (QPoint, InteractiveViewTriangulation *);
+                                   friend void insertpoint (QPoint, InteractiveViewTriangulation *);
+                                   friend void define_source_target (QPoint, InteractiveViewTriangulation *);
 
 
                                    public:
-                                       InteractiveTriangulationView (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent = nullptr);
+                                       InteractiveViewTriangulation (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent = nullptr);
 
                                        QPlainTextEdit  textEditL;
                                        QPlainTextEdit  textEditR;

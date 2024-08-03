@@ -6,7 +6,7 @@
 static std::string s_deletepoint = R"(
 
 // this function doesnt actually delete the point, it creates a new triangulation object with all the point except for the one you clicked on!
-void deletepoint (QPoint mousePoint , InteractiveTriangulationView * that) 
+void deletepoint (QPoint mousePoint , InteractiveViewTriangulation * that) 
 {
     // Convert the clicked mouse point to scene coordinates
     QPointF scenePoint = that->mapToScene(mousePoint); 
@@ -61,13 +61,13 @@ void deletepoint (QPoint mousePoint , InteractiveTriangulationView * that)
 })";
 
 
-InteractiveTriangulationView::InteractiveTriangulationView (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent):
+InteractiveViewTriangulation::InteractiveViewTriangulation (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent):
                               QGraphicsView(parent), cdt_(cdt), dt_(dt), ref_mainwindow (mw)
                              {
-                                qDebug() <<"InteractiveTriangulationView::InteractiveTriangulationView ";
+                                qDebug() <<"InteractiveViewTriangulation::InteractiveViewTriangulation ";
                                 grabGesture(Qt::PinchGesture);
 
-                                this->ref_mainwindow.view_dt = this;
+                                this->ref_mainwindow.ptr_iv = this;
                                 this->setScene(&ref_mainwindow.scene_);
                                 ref_mainwindow.scene_.setBackgroundBrush(Qt::white);
 
@@ -100,12 +100,12 @@ InteractiveTriangulationView::InteractiveTriangulationView (CDT &cdt, Delaunay& 
 
                                 this->message_qs_DT_start = message_r_DT_start;
 
-                                qDebug() << "InteractiveTriangulationView::InteractiveTriangulationView exit";
+                                qDebug() << "InteractiveViewTriangulation::InteractiveViewTriangulation exit";
 
                                 
                             }
 
-void insertpoint(QPoint posi, InteractiveTriangulationView* that)
+void insertpoint(QPoint posi, InteractiveViewTriangulation* that)
 {
     qDebug() << "insertpoint" ;
     QPointF pos = that->mapToScene(posi);
@@ -121,7 +121,7 @@ void insertpoint(QPoint posi, InteractiveTriangulationView* that)
         that->dt_.insert(Point_2(x, y)); //activate if i want to edit the triangulation
 }
 
-void deletepoint(QPoint mousePoint , InteractiveTriangulationView * that)
+void deletepoint(QPoint mousePoint , InteractiveViewTriangulation * that)
 {
     hs_update_log_all("deletepoint", s_deletepoint);
 
@@ -161,7 +161,7 @@ void deletepoint(QPoint mousePoint , InteractiveTriangulationView * that)
 
 }
 
-void define_source_target (QPoint mousePoint, InteractiveTriangulationView * that)
+void define_source_target (QPoint mousePoint, InteractiveViewTriangulation * that)
 {
     QPointF scenePoint = that->mapToScene(mousePoint);
 
@@ -185,9 +185,9 @@ void define_source_target (QPoint mousePoint, InteractiveTriangulationView * tha
 
 }
 
-void InteractiveTriangulationView::mousePressEvent(QMouseEvent* event)
+void InteractiveViewTriangulation::mousePressEvent(QMouseEvent* event)
                                   {
-                                    qDebug() << " InteractiveTriangulationView::mousePressEvent " ;
+                                    qDebug() << " InteractiveViewTriangulation::mousePressEvent " ;
 
                                     if (flag_edit_ctriangulation)
                                         {
@@ -219,12 +219,12 @@ void InteractiveTriangulationView::mousePressEvent(QMouseEvent* event)
 
                                     scene_refresh();
                                     this->update();
-                                    qDebug() << " InteractiveTriangulationView::mousePressEvent exit" ;
+                                    qDebug() << " InteractiveViewTriangulation::mousePressEvent exit" ;
                                   }
 
-void InteractiveTriangulationView::source_target_shortestpath (Point_2 pt)
+void InteractiveViewTriangulation::source_target_shortestpath (Point_2 pt)
                                   {
-                                    qDebug() << "InteractiveTriangulationView::source_target_shortestpath" ;
+                                    qDebug() << "InteractiveViewTriangulation::source_target_shortestpath" ;
                                     if(!flag_input_st)
                                       {
                                        flag_input_st = 1;
@@ -256,9 +256,9 @@ typedef CGAL::Delaunay_triangulation_2<K, Tds> Triangulation2;
 // trying to do a more general approach that will allow me to adapt for CDT also
 // seems to work but have to insert constrained edge to source and target points otherwise they are not considered
 
-bool InteractiveTriangulationView::event(QEvent* event)
+bool InteractiveViewTriangulation::event(QEvent* event)
      {
-        //qDebug() << "InteractiveTriangulationView::event" ;
+        //qDebug() << "InteractiveViewTriangulation::event" ;
          if (event->type() == QEvent::Gesture)
             {
                 QGestureEvent* gestureEvent = static_cast<QGestureEvent*>(event);
@@ -268,14 +268,14 @@ bool InteractiveTriangulationView::event(QEvent* event)
                 }
                 return true;
             }
-            //qDebug() << "InteractiveTriangulationView::event exit" ;
+            //qDebug() << "InteractiveViewTriangulation::event exit" ;
             return QGraphicsView::event(event);
      }
 
 
-void InteractiveTriangulationView::wheelEvent(QWheelEvent *event)
+void InteractiveViewTriangulation::wheelEvent(QWheelEvent *event)
     {
-       qDebug() << "InteractiveTriangulationView::wheelEvent" ;
+       qDebug() << "InteractiveViewTriangulation::wheelEvent" ;
            if (event != nullptr && event->modifiers() & Qt::ControlModifier) {
 
            int delta = event->angleDelta().y();
@@ -292,7 +292,7 @@ void InteractiveTriangulationView::wheelEvent(QWheelEvent *event)
     }
 
 
-void InteractiveTriangulationView::keyPressEvent(QKeyEvent *event)
+void InteractiveViewTriangulation::keyPressEvent(QKeyEvent *event)
     {
       if (event->key() == Qt::Key_P || event->key() == Qt::Key_Equal)
          {
@@ -316,7 +316,7 @@ void InteractiveTriangulationView::keyPressEvent(QKeyEvent *event)
 
 
 
-void InteractiveTriangulationView::mouseReleaseEvent(QMouseEvent* event)  {
+void InteractiveViewTriangulation::mouseReleaseEvent(QMouseEvent* event)  {
        if (event->button() == Qt::MiddleButton) {
                    // Middle mouse button release for panning
                    panning = false;
@@ -326,7 +326,7 @@ void InteractiveTriangulationView::mouseReleaseEvent(QMouseEvent* event)  {
        }
     }
 
-void InteractiveTriangulationView::mouseMoveEvent(QMouseEvent* event)  {
+void InteractiveViewTriangulation::mouseMoveEvent(QMouseEvent* event)  {
        if (panning) {
                    // Pan the view
                    QPointF delta = mapToScene(lastPanPos.toPoint()) - mapToScene(event->pos());
@@ -337,7 +337,7 @@ void InteractiveTriangulationView::mouseMoveEvent(QMouseEvent* event)  {
        }
     }
 
-void InteractiveTriangulationView::scene_refresh()
+void InteractiveViewTriangulation::scene_refresh()
                                    {
                                     qDebug() << "scene_refresh" ;
 
@@ -362,9 +362,9 @@ void InteractiveTriangulationView::scene_refresh()
                                       this->update_log();
                                    }
 
-void InteractiveTriangulationView::clear_graphicitems()
+void InteractiveViewTriangulation::clear_graphicitems()
                                    {
-                                    qDebug() << "InteractiveTriangulationView::clear_graphicitems "<< scalefactor ;
+                                    qDebug() << "InteractiveViewTriangulation::clear_graphicitems "<< scalefactor ;
 
                                     //qDebug() << "1 ";
                                     for (auto &item : triangulationItems)
@@ -430,9 +430,9 @@ void InteractiveTriangulationView::clear_graphicitems()
                                     delete voronoiItem;
                                    }
 
-void InteractiveTriangulationView::create_graphicitems()
+void InteractiveViewTriangulation::create_graphicitems()
                                    {
-                                    qDebug() << "InteractiveTriangulationView::create_graphicitems"<< scalefactor ;
+                                    qDebug() << "InteractiveViewTriangulation::create_graphicitems"<< scalefactor ;
                                     triangulationItems.push_back(new CGAL::Qt::TriangulationGraphicsItem<Delaunay> (&this->dt_, false));
                                     triangulationItems.back()->setZValue(0.1);
 
@@ -449,9 +449,9 @@ void InteractiveTriangulationView::create_graphicitems()
                                     voronoiItem = new CGAL::Qt::VoronoiGraphicsItem<Delaunay> (&this->dt_);
                                    }
 
-void InteractiveTriangulationView::scene_add_graphicitems()
+void InteractiveViewTriangulation::scene_add_graphicitems()
                                    {
-                                    qDebug() << "InteractiveTriangulationView::scene_add_graphicitems" << scalefactor ;
+                                    qDebug() << "InteractiveViewTriangulation::scene_add_graphicitems" << scalefactor ;
 
                                     if (this->flag_triangulation)
                                        {
@@ -494,15 +494,15 @@ void InteractiveTriangulationView::scene_add_graphicitems()
                                        }
 
                                    }
-void InteractiveTriangulationView::set_textitems ()
+void InteractiveViewTriangulation::set_textitems ()
                                     {
-                                      qDebug() << "InteractiveTriangulationView::set_textitems" << scalefactor ;
+                                      qDebug() << "InteractiveViewTriangulation::set_textitems" << scalefactor ;
                                       set_textitems_dt();
                                       set_textitems_ct();
                                     }
-void InteractiveTriangulationView::set_textitems_dt ()
+void InteractiveViewTriangulation::set_textitems_dt ()
                                     {
-                                      qDebug() << "InteractiveTriangulationView::set_textitems_dt"<< scalefactor  ;
+                                      qDebug() << "InteractiveViewTriangulation::set_textitems_dt"<< scalefactor  ;
 
                                       QFont font("Helvetica", fontSize);
                                       font.setPointSizeF(font.pointSizeF() /* /scalefactor */);
@@ -523,9 +523,9 @@ void InteractiveTriangulationView::set_textitems_dt ()
                                           }
 
                                     }
-void InteractiveTriangulationView::set_textitems_ct ()
+void InteractiveViewTriangulation::set_textitems_ct ()
                                     {
-                                      qDebug() << "InteractiveTriangulationView::set_textitems_ct"<< scalefactor  ;
+                                      qDebug() << "InteractiveViewTriangulation::set_textitems_ct"<< scalefactor  ;
 
                                       QFont font("Helvetica", fontSize);
 
@@ -541,9 +541,9 @@ void InteractiveTriangulationView::set_textitems_ct ()
                                           }
                                     }
 
-void InteractiveTriangulationView::scene_add_textitems()
+void InteractiveViewTriangulation::scene_add_textitems()
                                    {
-                                    qDebug() << "InteractiveTriangulationView::scene_add_textitems" << scalefactor ;
+                                    qDebug() << "InteractiveViewTriangulation::scene_add_textitems" << scalefactor ;
                                     if (this->flag_triangulation)
                                        {
                                         for (auto a : textItems)
@@ -563,9 +563,9 @@ void InteractiveTriangulationView::scene_add_textitems()
                                        }
                                    }
 
-void InteractiveTriangulationView::setpens ()
+void InteractiveViewTriangulation::setpens ()
                                   {
-                                    qDebug() << "InteractiveTriangulationView::setpens" << scalefactor ;
+                                    qDebug() << "InteractiveViewTriangulation::setpens" << scalefactor ;
 
                                     qDebug() << "1" << scalefactor;
                                     //QColor(255,184,191, 255)
@@ -668,7 +668,7 @@ void InteractiveTriangulationView::setpens ()
                                        voronoiItem->setEdgesPen(vedgespen);
                                       }
 
-                                    qDebug() << "InteractiveTriangulationView::setpens exit" ;
+                                    qDebug() << "InteractiveViewTriangulation::setpens exit" ;
                                   }
 
 
@@ -702,9 +702,9 @@ static std::string replaceLFWithEscapeSequence(const std::string& input)
 size_t position_insert = literal.find("ese: ");
 size_t countlines = 0;
 size_t count_updates = 0;
-void InteractiveTriangulationView::update_log ()
+void InteractiveViewTriangulation::update_log ()
                                    {
-                                    qDebug() << "InteractiveTriangulationView::update_log: " << hs_vector_log.size()  ;
+                                    qDebug() << "InteractiveViewTriangulation::update_log: " << hs_vector_log.size()  ;
                                     if (flag_triangulation)
                                      if (int dif = hs_vector_log.size() - log_size > 0)
                                         {
@@ -740,17 +740,17 @@ void InteractiveTriangulationView::update_log ()
                                     textEditL.moveCursor(QTextCursor::End); // s
                                    }
 
-QGraphicsTextItem*  InteractiveTriangulationView::createTextItem(QPointF position, QString text)
+QGraphicsTextItem*  InteractiveViewTriangulation::createTextItem(QPointF position, QString text)
                                                  {
-                                                   qDebug() << "InteractiveTriangulationView::createTextItem" ;
+                                                   qDebug() << "InteractiveViewTriangulation::createTextItem" ;
                                                    QGraphicsTextItem* textItem = new QGraphicsTextItem(text);
                                                    textItem->setPos(position);
                                                    return textItem;
                                                  }
 
-double InteractiveTriangulationView::scale_factor ()
+double InteractiveViewTriangulation::scale_factor ()
                                                   {
-                                                    qDebug() << "InteractiveTriangulationView::scale_factor" ;
+                                                    qDebug() << "InteractiveViewTriangulation::scale_factor" ;
                                                     CGAL::Bbox_2 bb = CGAL::bbox_2(dt_.points_begin(), dt_.points_end());
 
                                                     double bounding_box_width = bb.xmax() - bb.xmin();
@@ -769,8 +769,8 @@ double InteractiveTriangulationView::scale_factor ()
                                                   }
 
 
-void InteractiveTriangulationView::sync_flag_sets(){
-                                                    qDebug() << "InteractiveTriangulationView::sync_flag_sets" ;
+void InteractiveViewTriangulation::sync_flag_sets(){
+                                                    qDebug() << "InteractiveViewTriangulation::sync_flag_sets" ;
 
                                                     //check inverse
                                                      if (flag_triangulation)
