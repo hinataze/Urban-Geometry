@@ -68,20 +68,6 @@ MainWindow::MainWindow(QWidget *parent, QApplication *app) : QMainWindow(parent)
 
             }
 
-            void MainWindow::openEmailClient()
-            {
-              QString emailTo = "solheiro@iis.u-tokyo.ac.jp";
-              QString subject = "Urban Geometry Help Request";
-              QString body = "Dear Hermenegildo,\n\nI need help with: [Describe your issue here] \n\n Thanks.";
-
-              // Create the mailto URL
-              QString mailtoUrl = "https://mail.google.com/mail/?view=cm&fs=1&to=" + emailTo + "&su=" + subject + "&body=" + body;
-
-
-              // Open the default email client
-              QDesktopServices::openUrl(QUrl(mailtoUrl));
-            }
-
 MainWindow::~MainWindow()
             {
               qDebug() << "MainWindow::~MainWindow" ;
@@ -90,117 +76,127 @@ MainWindow::~MainWindow()
               setMouseTracking(true);
             }
 
-void MainWindow::paintEvent(QPaintEvent *event)  {
-       QMainWindow::paintEvent(event);
-
-       QPainter painter(this);
-       painter.setPen(Qt::black);
-       painter.drawText(cursorPosition.x() + 15, cursorPosition.y() - 15, "Cursor Coordinates: " + QString::number(cursorPosition.x()) + ", " + QString::number(cursorPosition.y()));
-   }
-
-   void MainWindow::mouseMoveEvent(QMouseEvent *event) {
-       cursorPosition = event->pos();
-       update(); // Trigger a repaint of the QMainWindow
-   }
-
 
 //doesnt create/delete items just add/removes from scene
-void MainWindow::turn_flag_view (bool &flag)
-                 {
-                  qDebug() << " MainWindow::turn_flag_view" ;
-                  flag = flag != false ? false : true;
+void MainWindow::turn_flag_view(bool& flag)
+{
+    qDebug() << " MainWindow::turn_flag_view";
+    flag = flag != false ? false : true;
+
+    if (&flag == &this->ptr_iv->flag_ctriangulation && this->ptr_iv->flag_ctriangulation == true)
+        this->ptr_iv->flag_triangulation = false; // because in sync_flag_sets flag_triangulation comes first dont need to set that
+
+    if (&flag == &this->ptr_iv->flag_voronoi && this->ptr_iv->flag_voronoi == true && this->ptr_iv->flag_triangulation == false)
+    {
+        this->ptr_iv->flag_voronoi = false;
+        QMessageBox::warning(nullptr, "Warning", "Voronoi diagram is only available for DT. Select DT mode first.");
+    }
 
 
-                  if (&flag == &this->ptr_iv->flag_ctriangulation && this->ptr_iv->flag_ctriangulation == true)
-                      this->ptr_iv->flag_triangulation = false; // because in sync_flag_sets flag_triangulation comes first dont need to set that
+    //TRIANGULATION
+    if (ptr_iv->hst->dt_.vertices_begin() != ptr_iv->hst->dt_.vertices_end())
+    {
+        if (this->ptr_iv->flag_triangulation)
+        {
+            this->scene_.addItem(this->ptr_iv->hst->triangulationItems.back());
+            for (auto item : ptr_iv->hst->textItems)
+                this->scene_.addItem(item);
+        }
+        else if (!this->ptr_iv->flag_triangulation)
+        {
+            for (auto item : ptr_iv->hst->triangulationItems)
+                this->scene_.removeItem(item);
 
+            for (auto item : ptr_iv->hst->textItems)
+                this->scene_.removeItem(item);
+        }
 
-                  if (&flag == &this->ptr_iv->flag_voronoi &&  this->ptr_iv->flag_voronoi ==true && this->ptr_iv->flag_triangulation == false)
-                     {
-                         this->ptr_iv->flag_voronoi = false;
-                         QMessageBox::warning(nullptr, "Warning", "Voronoi diagram is only available for DT. Select DT mode first.");
-                     }
+        //CONSTRAINED
+        if (ptr_iv->hst->cdt_.vertices_begin() != ptr_iv->hst->cdt_.vertices_end())
+        {
+            if (this->ptr_iv->flag_ctriangulation)
+            {
+                this->scene_.addItem(ptr_iv->hst->ctriangulationItem);
+                for (auto item : ptr_iv->hst->ctextItems)
+                    this->scene_.addItem(item);
+            }
+            else if (!this->ptr_iv->flag_ctriangulation)
+            {
+                this->scene_.removeItem(ptr_iv->hst->ctriangulationItem);
 
+                for (auto item : ptr_iv->hst->ctextItems)
+                    this->scene_.removeItem(item);
+            }
+        }
 
-                  //TRIANGULATION
-                  if (ptr_iv->dt_.vertices_begin()!=ptr_iv->dt_.vertices_end())
-                  {
-                  if (this->ptr_iv->flag_triangulation)
-                     { qDebug() << "1";
-                       this->scene_.addItem(this->ptr_iv->triangulationItems.back());
-                       for (auto item : ptr_iv->textItems)
-                           this->scene_.addItem(item);
-                     }
-                     else if (!this->ptr_iv->flag_triangulation)
-                             {
-                              qDebug() << "2";
-                               for (auto item : ptr_iv->triangulationItems)
-                                   this->scene_.removeItem(item);
+        //SHORTEST PATH
+        if (ptr_iv->hst->sp.sp_size())
+        {
+            if (this->ptr_iv->flag_spath)
+            {
+                for (auto& a : ptr_iv->hst->sp.v_cdt_gi)
+                    this->scene_.addItem(a);
 
-                               for (auto item : ptr_iv->textItems)
-                                   this->scene_.removeItem(item);
-                             }
-
-                  //CONSTRAINED
-                  if (ptr_iv->cdt_.vertices_begin()!=ptr_iv->cdt_.vertices_end())
-                     {
-                      if (this->ptr_iv->flag_ctriangulation)
-                         {
-                           this->scene_.addItem(ptr_iv->ctriangulationItem);
-                           for (auto item : ptr_iv->ctextItems)
-                                this->scene_.addItem(item);
-                         }
-                          else if (!this->ptr_iv->flag_ctriangulation)
-                                  {
-                                    this->scene_.removeItem(ptr_iv->ctriangulationItem);
-
-                                    for (auto item : ptr_iv->ctextItems)
-                                        this->scene_.removeItem(item);
-                                  }
-                     }
-
-                  //SHORTEST PATH
-                  if (ptr_iv->sp.sp_size())
-                     {
-                      if (this->ptr_iv->flag_spath)
-                         {
-                          for (auto & a : ptr_iv->sp.v_cdt_gi )
-                              this->scene_.addItem(a);
-
-                          if (ptr_iv->sp.elipse_source != nullptr && ptr_iv->sp.elipse_target != nullptr)
-                             {
-                              this->scene_.addItem(ptr_iv->sp.elipse_source);
-                              this->scene_.addItem(ptr_iv->sp.elipse_target);
-                             }
-                         }
-                          else if (!this->ptr_iv->flag_spath)
-                                  {
-                                    for (auto & a : ptr_iv->sp.v_cdt_gi )
-                                        this->scene_.removeItem(a);
-
-                                    this->scene_.removeItem(ptr_iv->sp.elipse_source);
-                                    this->scene_.removeItem(ptr_iv->sp.elipse_target);
-                                  }
-                     }
-
-                   //VORONOI
-                  if (this->ptr_iv->flag_voronoi)
-                      this->scene_.addItem(this->ptr_iv->voronoiItem);
-                      else if (!this->ptr_iv->flag_voronoi)
-                              this->scene_.removeItem(this->ptr_iv->voronoiItem);
-                  }
-
-                  if (&flag != &this->ptr_iv->flag_voronoi) // inside sync_flag_sets we toggle textview for dt
-                      this->ptr_iv->sync_flag_sets ();
-                  this->ptr_iv->scene_refresh();
-                  this->ptr_iv->update();
-                 }
-
-void MainWindow::turn_flag_edit (bool &flag)
+                if (ptr_iv->hst->sp.elipse_source != nullptr && ptr_iv->hst->sp.elipse_target != nullptr)
                 {
-                 qDebug() << " MainWindow::turn_flag_edit" ;
-                 flag = flag != false ? false : true;
+                    this->scene_.addItem(ptr_iv->hst->sp.elipse_source);
+                    this->scene_.addItem(ptr_iv->hst->sp.elipse_target);
                 }
+            }
+            else if (!this->ptr_iv->flag_spath)
+            {
+                for (auto& a : ptr_iv->hst->sp.v_cdt_gi)
+                    this->scene_.removeItem(a);
+
+                this->scene_.removeItem(ptr_iv->hst->sp.elipse_source);
+                this->scene_.removeItem(ptr_iv->hst->sp.elipse_target);
+            }
+        }
+
+        //VORONOI
+        if (this->ptr_iv->flag_voronoi)
+            this->scene_.addItem(this->ptr_iv->hst->voronoiItem);
+        else if (!this->ptr_iv->flag_voronoi)
+            this->scene_.removeItem(this->ptr_iv->hst->voronoiItem);
+    }
+
+    if (&flag != &this->ptr_iv->flag_voronoi) // inside sync_flag_sets we toggle textview for dt
+        this->ptr_iv->sync_flag_sets();
+    this->ptr_iv->scene_refresh();
+    this->ptr_iv->update();
+}
+void MainWindow::turn_flag_edit(bool& flag)
+{
+    qDebug() << " MainWindow::turn_flag_edit";
+    flag = flag != false ? false : true;
+}
+void MainWindow::view_refresh()
+{
+    qDebug() << "MainWindow::view_refresh";
+    if (ptr_iv != nullptr)
+        ptr_iv->scene_refresh();
+
+    qDebug() << "MainWindow::view_refresh exit";
+}
+void MainWindow::fit_view()
+{
+    qDebug() << "MainWindow::fit_view ";
+    this->ptr_iv->fitInView(this->ptr_iv->hst->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
+}
+void MainWindow::openEmailClient()
+{
+    QString emailTo = "solheiro@iis.u-tokyo.ac.jp";
+    QString subject = "Urban Geometry Help Request";
+    QString body = "Dear Hermenegildo,\n\nI need help with: [Describe your issue here] \n\n Thanks.";
+
+    // Create the mailto URL
+    QString mailtoUrl = "https://mail.google.com/mail/?view=cm&fs=1&to=" + emailTo + "&su=" + subject + "&body=" + body;
+
+
+    // Open the default email client
+    QDesktopServices::openUrl(QUrl(mailtoUrl));
+}
+
 
 void MainWindow::openFile (bool flag_start)
                 {
@@ -278,46 +274,11 @@ void MainWindow::openFile (bool flag_start)
                   {
                       qDebug() << " ptr_iv != nullptr "  << ptr_iv;
                       this->view_refresh();
-                      this->ptr_iv->fitInView(this->ptr_iv->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
+                      this->ptr_iv->fitInView(this->ptr_iv->hst->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
                   }
 
                   qDebug() << "MainWindow::openFile exit " ;
                 }
-
-void MainWindow::fit_view()
-                {
-                  qDebug() << "MainWindow::fit_view " ;
-                  this->ptr_iv->fitInView(this->ptr_iv->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
-                }
-
-bool MainWindow::isGeoJson (const QString filePath)
-                   {
-                       qDebug() << "MainWindow::isGeoJson " ;
-                       QFile file(filePath);
-                       if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                           qDebug() << "Failed to open the file.";
-                           return false;
-                       }
-
-                       QTextStream stream(&file);
-                       QString line = stream.readLine();
-                       file.close();
-
-                       // Check if the file has the GeoJSON extension (.geojson)
-                       if (filePath.toLower().endsWith(".geojson"))
-                          {qDebug() << "is geojson" ;
-                           return true;
-                          }
-
-                      //// Check if the first line contains a GeoJSON marker (e.g., {"type": "FeatureCollection")
-                      //if (line.contains("\"type\": \"FeatureCollection\"")) {
-                      //    return true;
-                      //}
-
-                       qDebug() << "not geojson" ;
-                       return false;
-                   }
-
 std::vector <std::pair <double, double>> MainWindow::openfile_txt  (QString path)
                                                    {
                                                         qDebug() << "MainWindow::openfile_txt " ;
@@ -420,36 +381,35 @@ std::vector <std::pair <double, double>> MainWindow::openfile_txt  (QString path
                                                        }
                                                         return map_id_data;
                                                    }
-
 void MainWindow::openfile_insertpoints_txt (std::vector <std::pair <double, double>> &vpts)
                 {
                   qDebug()<< "MainWindow::openfile_insertpoints_txt";
-                   ptr_iv->dt_.clear();
+                   ptr_iv->hst->dt_.clear();
                    for (auto & a : vpts)
                        {
-                           ptr_iv->dt_.insert (Point_2 (a.first, a.second));
-                           ptr_iv->cdt_.insert (Point_2 (a.first, a.second));
+                           ptr_iv->hst->dt_.insert (Point_2 (a.first, a.second));
+                           ptr_iv->hst->cdt_.insert (Point_2 (a.first, a.second));
                        }
                 }
 void MainWindow::openfile_insertpoints_gjson (std::map <QString, std::pair <QString, QString>>  &vpts)
                 {
                   qDebug()<< "MainWindow::openfile_insertpoints_gjson";
-                   ptr_iv->dt_.clear();
+                   ptr_iv->hst->dt_.clear();
                    for (auto & a : vpts)
                        {
-                          ptr_iv->dt_.insert (Point_2 (a.second.first.toDouble(), a.second.second.toDouble()));
-                          ptr_iv->cdt_.insert (Point_2(a.second.first.toDouble(), a.second.second.toDouble()));
+                          ptr_iv->hst->dt_.insert (Point_2 (a.second.first.toDouble(), a.second.second.toDouble()));
+                          ptr_iv->hst->cdt_.insert (Point_2(a.second.first.toDouble(), a.second.second.toDouble()));
                          // qDebug() << Point_2 (a.second.first.toDouble(), a.second.second.toDouble()) ;
                           //qDebug() << Point_2 (a.second.first.toDouble(), a.second.second.toDouble()) ;
                        }
                    int numberOfPoints = 0;
-                      for (auto v =  ptr_iv->dt_.finite_vertices_begin(); v !=  ptr_iv->dt_.finite_vertices_end(); ++v)
+                      for (auto v =  ptr_iv->hst->dt_.finite_vertices_begin(); v !=  ptr_iv->hst->dt_.finite_vertices_end(); ++v)
                       {
                           numberOfPoints++;
                       }
 
                       int numberOfPointscdt = 0;
-                         for (auto v =  ptr_iv->cdt_.finite_vertices_begin(); v !=  ptr_iv->cdt_.finite_vertices_end(); ++v)
+                         for (auto v =  ptr_iv->hst->cdt_.finite_vertices_begin(); v !=  ptr_iv->hst->cdt_.finite_vertices_end(); ++v)
                          {
                              numberOfPointscdt++;
                          }
@@ -458,12 +418,10 @@ void MainWindow::openfile_insertpoints_gjson (std::map <QString, std::pair <QStr
                       qDebug() << "Number of points in the CDT: " << numberOfPointscdt ;
 
                 }
-
-//from txt
 void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, double>> &vegs, std::vector <std::pair <double, double>> &vpts)
                  {
                   qDebug()<< "MainWindow::openfile_insertedges_txt";
-                  ptr_iv->cdt_.clear();
+                  ptr_iv->hst->cdt_.clear();
 
                   for (auto & a : vegs)
                       {
@@ -477,7 +435,7 @@ void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, doubl
 
                        try
                          {
-                           ptr_iv->cdt_.insert_constraint (point_source, point_target);
+                           ptr_iv->hst->cdt_.insert_constraint (point_source, point_target);
                          }
                          catch (const std::exception& e)
                                {
@@ -485,14 +443,12 @@ void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, doubl
                                // break;
                                }
                        }
-                  qDebug() << "is valid? " << ptr_iv->cdt_.is_valid() ;
+                  qDebug() << "is valid? " << ptr_iv->hst->cdt_.is_valid() ;
                  }
-
-//from geoson
 void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QString, QString>> &vegs, std::map <QString, std::pair <QString, QString>>  &vpts)
                  {
                   qDebug()<< "MainWindow::openfile_insertedges_geojson";
-                  ptr_iv->cdt_.clear();
+                  ptr_iv->hst->cdt_.clear();
 
                   qDebug() <<"nodes to insert: "<< vegs.size() << ", links to insert: " <<vpts.size() ;
 
@@ -509,7 +465,7 @@ void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QStri
 
                        try
                          {
-                           ptr_iv->cdt_.insert_constraint (point_source, point_target);
+                           ptr_iv->hst->cdt_.insert_constraint (point_source, point_target);
                          }
                          catch (const std::exception& e)
                                {
@@ -517,18 +473,36 @@ void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QStri
                                 //break;
                                }
                        }
-                  qDebug() << "is valid? " << ptr_iv->cdt_.is_valid() ;
+                  qDebug() << "is valid? " << ptr_iv->hst->cdt_.is_valid() ;
                  }
+bool MainWindow::isGeoJson(const QString filePath)
+{
+    qDebug() << "MainWindow::isGeoJson ";
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Failed to open the file.";
+        return false;
+    }
 
-void MainWindow::view_refresh()
-                 {
-                   qDebug()<< "MainWindow::view_refresh";
-                   if (ptr_iv != nullptr)
-                   ptr_iv->scene_refresh();
+    QTextStream stream(&file);
+    QString line = stream.readLine();
+    file.close();
 
-                   qDebug()<< "MainWindow::view_refresh exit";
-                 }
+    // Check if the file has the GeoJSON extension (.geojson)
+    if (filePath.toLower().endsWith(".geojson"))
+    {
+        qDebug() << "is geojson";
+        return true;
+    }
 
+    //// Check if the first line contains a GeoJSON marker (e.g., {"type": "FeatureCollection")
+    //if (line.contains("\"type\": \"FeatureCollection\"")) {
+    //    return true;
+    //}
+
+    qDebug() << "not geojson";
+    return false;
+}
 
 void MainWindow::save_files()
                  {
@@ -555,13 +529,11 @@ void MainWindow::save_files()
 
                   if (!outputFile.is_open())
                      {
-                      qDebug() << "!!!!! path is" ;
-                     // qDebug() << filePath.toStdString() ;
                       qWarning() << "!!Error opening the output file.";
                       return;
                      }
 
-                  for (Delaunay::Finite_vertices_iterator it = ptr_iv->dt_.finite_vertices_begin(); it != ptr_iv->dt_.finite_vertices_end(); ++it)
+                  for (Delaunay::Finite_vertices_iterator it = ptr_iv->hst->dt_.finite_vertices_begin(); it != ptr_iv->hst->dt_.finite_vertices_end(); ++it)
                      {
                       Point_2 p = it->point();
                       outputFile << p.x() << " " << p.y() << "\n";
@@ -572,8 +544,6 @@ void MainWindow::save_files()
 
                   else if (!this->ptr_iv->flag_triangulation)
                   {
-                     //cdt vertices coordinates
-                      //cdt constrains (vertex indices)
                       QMessageBox::information(nullptr, "Information", "Please chose the path to save the present Constrained delaunay triangulation (nodes).");
                       QString filePath_v = QFileDialog::getSaveFileName(this, "Save Delaunay Triangulation", "", "Text Files (*.txt)");
 
@@ -592,7 +562,7 @@ void MainWindow::save_files()
                          }
 
 
-                      for (auto it_v = ptr_iv->cdt_.finite_vertices_begin(); it_v != ptr_iv->cdt_.finite_vertices_end(); ++it_v)
+                      for (auto it_v = ptr_iv->hst->cdt_.finite_vertices_begin(); it_v != ptr_iv->hst->cdt_.finite_vertices_end(); ++it_v)
                           {
                           outputFile_v << it_v->point().x() << " " << it_v->point().y() <<"\n" ;
                           }
@@ -618,9 +588,9 @@ void MainWindow::save_files()
                           }
 
 
-                      for (auto e = ptr_iv->cdt_.finite_edges_begin(); e != ptr_iv->cdt_.finite_edges_end(); ++e)
+                      for (auto e = ptr_iv->hst->cdt_.finite_edges_begin(); e != ptr_iv->hst->cdt_.finite_edges_end(); ++e)
                           {
-                            if (ptr_iv->cdt_.is_constrained(*e))
+                            if (ptr_iv->hst->cdt_.is_constrained(*e))
                                {
                                  for (int i = 1; i <= 2; ++i)
                                      {
@@ -629,7 +599,7 @@ void MainWindow::save_files()
                                        //outputFile << vertex_point << " " ;
 
                                        size_t count_vertex_index = 0;
-                                       for (auto vert = ptr_iv->cdt_.finite_vertices_begin(); vert != ptr_iv->cdt_.finite_vertices_end(); ++vert)
+                                       for (auto vert = ptr_iv->hst->cdt_.finite_vertices_begin(); vert != ptr_iv->hst->cdt_.finite_vertices_end(); ++vert)
                                            {
                                             if (vert->point() == v->point())
                                                {
@@ -646,8 +616,6 @@ void MainWindow::save_files()
                           outputFile.close();
                       QMessageBox::information(nullptr, "Information", "CDT constraints have been saved.");
 
-
-
                   //COORDINATES
                   QMessageBox::information(nullptr, "Information", "Please chose the file to save the shortest paths' nodes (coordinates).");
                   QString filePath_coord = QFileDialog::getSaveFileName (ptr_iv, "Save Shortest paths", "", "Text Files (*.txt)");
@@ -656,14 +624,34 @@ void MainWindow::save_files()
                   QMessageBox::information(nullptr, "Information", "Now chose the file to save the shortest paths' nodes (indices).");
                   QString filePath_ids = QFileDialog::getSaveFileName(ptr_iv, "Save Shortest paths", "", "Text Files (*.txt)");
 
-                  save_to_file_paths (filePath_ids, filePath_coord, ptr_iv);
+                  this->save_to_file_paths(filePath_ids, filePath_coord);
                   QMessageBox::information(nullptr, "Information", "Files have been saved.");
                       }
 
                  }
 
+void MainWindow::save_to_file_paths (QString filePath_ids, QString filePath_coord)
+{ 
+    qDebug() << "MainWindow::save_to_file_paths";
+
+    this->ptr_iv->save_to_file_paths (filePath_ids, filePath_coord);
+}
 
 
+
+void MainWindow::paintEvent(QPaintEvent* event) 
+{
+    QMainWindow::paintEvent(event);
+    QPainter painter(this);
+    painter.setPen(Qt::black);
+    painter.drawText(cursorPosition.x() + 15, cursorPosition.y() - 15, "Cursor Coordinates: " + QString::number(cursorPosition.x()) + ", " + QString::number(cursorPosition.y()));
+}
+
+
+void MainWindow::mouseMoveEvent(QMouseEvent* event) {
+    cursorPosition = event->pos();
+    update(); // Trigger a repaint of the QMainWindow
+}
 
 
 

@@ -1,71 +1,19 @@
 #include <include/interactive_view.h>
 #include <include/hs_shortest_path.h>
 
+// trying to do a  general approach that will allow me to adapt for CDT also
+// seems to work but have to insert constrained edge to source and target points otherwise they are not considered
 
 
-static std::string s_deletepoint = R"(
-
-// this function doesnt actually delete the point, it creates a new triangulation object with all the point except for the one you clicked on!
-void deletepoint (QPoint mousePoint , InteractiveViewTriangulation * that) 
-{
-    // Convert the clicked mouse point to scene coordinates
-    QPointF scenePoint = that->mapToScene(mousePoint); 
-    
-    // Create a query point from the scene coordinates
-    Point queryPoint(scenePoint.x(), scenePoint.y()); 
-
-    // Variable to hold the closest vertex to the clicked point
-    Delaunay::Vertex_handle closestVertex = nullptr;
-    // Check if there are any finite vertices in the triangulation
-    if (that->dt_.finite_vertices_begin() != that->dt_.finite_vertices_end())
-    {
-        // Find the nearest point in the triangulation to the query point
-        find_nearest_point(closestVertex, queryPoint, that->dt_);
-    }
-    else
-    {
-        // Show a warning message if the network is empty
-        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
-    }
-
-    // Check if the closest vertex is valid
-    if (closestVertex != nullptr && closestVertex->is_valid())
-    {
-        // Debugging output: print the coordinates of the vertex to be deleted
-        qDebug() << "delete vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y();
-
-        // Store the point of the vertex to be deleted
-        auto point = closestVertex->point();
-        // Create a new triangulation object to hold the remaining points
-        Triangulation dt_copy;
-        // Iterate through all the finite vertices in the current triangulation
-        for (auto vertex = that->dt_.finite_vertices_begin(); vertex != that->dt_.finite_vertices_end(); ++vertex)
-        {
-            // Add all points except for the one to be deleted to the new triangulation
-            if (vertex->point() != point)
-            {
-                dt_copy.insert(vertex->point());
-            }
-        }
-        // Replace the current triangulation with the new one
-        that->dt_ = dt_copy;
-        // Debugging output: confirm the vertex has been deleted
-        qDebug() << "vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y() << "deleted";
-        qDebug() << "vertex x" << point.x() << " y " << point.y() << "deleted!!";
-    }
-    else if (closestVertex == nullptr)
-    {
-        // Show a warning message if no point was found
-        QMessageBox::warning(nullptr, "Warning", "No Point was found.");
-    }
-})";
 
 
-InteractiveViewTriangulation::InteractiveViewTriangulation (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent):
-                              QGraphicsView(parent), cdt_(cdt), dt_(dt), ref_mainwindow (mw)
+InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent):
+                              QGraphicsView(parent), ref_mainwindow(mw)
                              {
-                                qDebug() <<"InteractiveViewTriangulation::InteractiveViewTriangulation ";
+                                qDebug() <<"InteractiveView_hs_triangulation::InteractiveView_hs_triangulation ";
                                 grabGesture(Qt::PinchGesture);
+
+                                hst = std::make_shared <hs_triangulation>(cdt, dt);
 
                                 this->ref_mainwindow.ptr_iv = this;
                                 this->setScene(&ref_mainwindow.scene_);
@@ -73,16 +21,13 @@ InteractiveViewTriangulation::InteractiveViewTriangulation (CDT &cdt, Delaunay& 
 
                                 this->setRenderHint(QPainter::Antialiasing);
 
-                                // Create a GraphicsViewNavigation for panning and zooming
-                                this->installEventFilter(&navigation);
+                                this->installEventFilter(&navigation); // for panning and zooming
 
-                                //triangulationItems.back()->setScale(100);
                                 QFont font2("Helvetica", 10 );
                                 textEditL.setFont(font2);
                                 textEditL.setPlainText("Code will be shown here.");
                                 textEditL.setMinimumHeight(150);
                                 
-                                //textEditL.setBaseSize (100);
                                 textEditL.setReadOnly(false); // Allow editing
                                 textEditL.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -96,115 +41,40 @@ InteractiveViewTriangulation::InteractiveViewTriangulation (CDT &cdt, Delaunay& 
 
                                 this->message_qs_DT = message_r_DT;
                                 this->message_qs_CDT = message_r_CDT;
-                                this->message_qs_open = message_r_open;
+                                this->message_qs_open = message_open;
 
                                 this->message_qs_DT_start = message_r_DT_start;
 
-                                qDebug() << "InteractiveViewTriangulation::InteractiveViewTriangulation exit";
-
-                                
+                                qDebug() << "InteractiveView_hs_triangulation::InteractiveView_hs_triangulation exit";
+   
                             }
 
-void insertpoint(QPoint posi, InteractiveViewTriangulation* that)
-{
-    qDebug() << "insertpoint" ;
-    QPointF pos = that->mapToScene(posi);
 
-    qDebug() << "insert point";
-    // Convert the mouse click position to world coordinates
-    
-    double x = CGAL::to_double(pos.x());
-    double y = CGAL::to_double(pos.y());
-
-    //CHANGE DT
-    if (that->flag_triangulation)
-        that->dt_.insert(Point_2(x, y)); //activate if i want to edit the triangulation
-}
-
-void deletepoint(QPoint mousePoint , InteractiveViewTriangulation * that)
-{
-    hs_update_log_all("deletepoint", s_deletepoint);
-
-    QPointF scenePoint = that->mapToScene(mousePoint);
-
-    // Find the closest vertex to the clicked point.
-    Point queryPoint(scenePoint.x(), scenePoint.y());
-
-    Delaunay::Vertex_handle closestVertex = nullptr;
-    if (that->dt_.finite_vertices_begin() != that->dt_.finite_vertices_end())
-    {
-        find_nearest_point(closestVertex, queryPoint, that->dt_);
-    }
-    else
-    {
-        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
-    }
-
-    if (closestVertex != nullptr && closestVertex->is_valid())
-    {
-        qDebug() << "delete vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y();
-        auto point = closestVertex->point();
-        Triangulation dt_copy;
-        for (auto vertex = that->dt_.finite_vertices_begin(); vertex != that->dt_.finite_vertices_end(); ++vertex)
-        {
-            if (vertex->point() != point)
-            {
-                dt_copy.insert(vertex->point());
-            }
-        }
-        that->dt_ = dt_copy;
-        qDebug() << "vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y() << "deleted";
-        qDebug() << "vertex x" << point.x() << " y " << point.y() << "deleted!!";
-    }
-    else  if (closestVertex == nullptr /*|| !closestVertex->is_valid()*/)
-        QMessageBox::warning(nullptr, "Warning", "No Point was found.");
-
-}
-
-void define_source_target (QPoint mousePoint, InteractiveViewTriangulation * that)
-{
-    QPointF scenePoint = that->mapToScene(mousePoint);
-
-    // Find the closest vertex to the clicked point.
-    Point queryPoint(scenePoint.x(), scenePoint.y());
-
-    CDT::Vertex_handle  closestVertex = nullptr;
-    if (that->cdt_.finite_vertices_begin() != that->cdt_.finite_vertices_end())
-    {
-        find_nearest_point(closestVertex, queryPoint, that->cdt_);
-    }
-    else
-    {
-        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
-    }
-
-    if (closestVertex != nullptr)
-    {
-        that->source_target_shortestpath(closestVertex->point());
-    }
-
-}
-
-void InteractiveViewTriangulation::mousePressEvent(QMouseEvent* event)
+void InteractiveView_hs_triangulation::mousePressEvent(QMouseEvent* event)
                                   {
-                                    qDebug() << " InteractiveViewTriangulation::mousePressEvent " ;
+                                    qDebug() << " InteractiveView_hs_triangulation::mousePressEvent " ;
 
                                     if (flag_edit_ctriangulation)
                                         {
                                           if (event->button() == Qt::LeftButton)
                                              {
-                                               define_source_target(event->pos(), this);
+                                               hst->f1_define_source_target(event->pos(), this);
                                              }                                   
                                         }
                                         else if (flag_edit_triangulation)
                                                 {  
                                                    if (event->button() == Qt::LeftButton)
                                                        {
-                                                        insertpoint(event->pos() , this); 
+
+                                                       QPointF pos = this->mapToScene(event->pos());
+
+                                                       //CHANGE DT
+                                                       if (this->flag_triangulation)
+                                                        hst->insertpoint(pos); 
                                                        }
                                                        else if (event->button() == Qt::RightButton)
                                                                {  
-                                                               deletepoint( event->pos(), this); 
+                                                               hst->deletepoint( event->pos(), this); 
                                                                }
                                                                else if (event->button() == Qt::MiddleButton)
                                                                        {
@@ -219,46 +89,12 @@ void InteractiveViewTriangulation::mousePressEvent(QMouseEvent* event)
 
                                     scene_refresh();
                                     this->update();
-                                    qDebug() << " InteractiveViewTriangulation::mousePressEvent exit" ;
+                                    qDebug() << " InteractiveView_hs_triangulation::mousePressEvent exit" ;
                                   }
 
-void InteractiveViewTriangulation::source_target_shortestpath (Point_2 pt)
-                                  {
-                                    qDebug() << "InteractiveViewTriangulation::source_target_shortestpath" ;
-                                    if(!flag_input_st)
-                                      {
-                                       flag_input_st = 1;
-                                       vppt_source_target.first = pt; // Replace with your source point
-                                       //qDebug() << "source point registered " << pt ;
-                                      }
-                                       else if (flag_input_st == 1)
-                                               {
-                                                 flag_input_st = 0;
-                                                 vppt_source_target.second = pt; // Replace with your source point
-                                                 //this->shortest_path();
-                                                 shortest_path_2  (this->cdt_, this);
-
-                                                 if (this->sp.sp_size())
-                                                    this->pathindex = this->sp.v_cdt.size()-1;//cannot refer to v_cdt_gi because latest gi was not created yet
-
-                                                 scene_refresh();
-                                                 this->update();
-
-                                                 //qDebug() << "target point registered " << pt ;
-                                               }
-                                  }
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef K::Point_2 Point;
-typedef CGAL::Delaunay_triangulation_2<K, Tds> Triangulation2;
-
-// typedef CGAL::Constrained_Delaunay_triangulation_2<K,Tds> Triangulation2;
-// trying to do a more general approach that will allow me to adapt for CDT also
-// seems to work but have to insert constrained edge to source and target points otherwise they are not considered
-
-bool InteractiveViewTriangulation::event(QEvent* event)
+bool InteractiveView_hs_triangulation::event (QEvent* event)
      {
-        //qDebug() << "InteractiveViewTriangulation::event" ;
+        //qDebug() << "InteractiveView_hs_triangulation::event" ;
          if (event->type() == QEvent::Gesture)
             {
                 QGestureEvent* gestureEvent = static_cast<QGestureEvent*>(event);
@@ -268,14 +104,12 @@ bool InteractiveViewTriangulation::event(QEvent* event)
                 }
                 return true;
             }
-            //qDebug() << "InteractiveViewTriangulation::event exit" ;
+            //qDebug() << "InteractiveView_hs_triangulation::event exit" ;
             return QGraphicsView::event(event);
      }
-
-
-void InteractiveViewTriangulation::wheelEvent(QWheelEvent *event)
+void InteractiveView_hs_triangulation::wheelEvent (QWheelEvent *event)
     {
-       qDebug() << "InteractiveViewTriangulation::wheelEvent" ;
+       qDebug() << "InteractiveView_hs_triangulation::wheelEvent" ;
            if (event != nullptr && event->modifiers() & Qt::ControlModifier) {
 
            int delta = event->angleDelta().y();
@@ -289,14 +123,14 @@ void InteractiveViewTriangulation::wheelEvent(QWheelEvent *event)
            } else {
                QGraphicsView::wheelEvent(event);
            }
+
+           qDebug() << "wheelEvent exit";
     }
-
-
-void InteractiveViewTriangulation::keyPressEvent(QKeyEvent *event)
+void InteractiveView_hs_triangulation::keyPressEvent (QKeyEvent *event)
     {
       if (event->key() == Qt::Key_P || event->key() == Qt::Key_Equal)
          {
-          if(pathindex < this->sp.v_cdt_gi.size())
+          if(pathindex < this->hst->sp.v_cdt_gi.size())
            pathindex++;
           event->accept();
          }
@@ -313,10 +147,7 @@ void InteractiveViewTriangulation::keyPressEvent(QKeyEvent *event)
       this->update();
        qDebug() << "pathindex: " << pathindex;
     }
-
-
-
-void InteractiveViewTriangulation::mouseReleaseEvent(QMouseEvent* event)  {
+void InteractiveView_hs_triangulation::mouseReleaseEvent (QMouseEvent* event)  {
        if (event->button() == Qt::MiddleButton) {
                    // Middle mouse button release for panning
                    panning = false;
@@ -325,8 +156,7 @@ void InteractiveViewTriangulation::mouseReleaseEvent(QMouseEvent* event)  {
                    QGraphicsView::mouseReleaseEvent(event);
        }
     }
-
-void InteractiveViewTriangulation::mouseMoveEvent(QMouseEvent* event)  {
+void InteractiveView_hs_triangulation::mouseMoveEvent (QMouseEvent* event)  {
        if (panning) {
                    // Pan the view
                    QPointF delta = mapToScene(lastPanPos.toPoint()) - mapToScene(event->pos());
@@ -336,8 +166,7 @@ void InteractiveViewTriangulation::mouseMoveEvent(QMouseEvent* event)  {
                    QGraphicsView::mouseMoveEvent(event);
        }
     }
-
-void InteractiveViewTriangulation::scene_refresh()
+void InteractiveView_hs_triangulation::scene_refresh ()
                                    {
                                     qDebug() << "scene_refresh" ;
 
@@ -361,153 +190,150 @@ void InteractiveViewTriangulation::scene_refresh()
                                    if (flag_triangulation)
                                       this->update_log();
                                    }
-
-void InteractiveViewTriangulation::clear_graphicitems()
+void InteractiveView_hs_triangulation::clear_graphicitems ()
                                    {
-                                    qDebug() << "InteractiveViewTriangulation::clear_graphicitems "<< scalefactor ;
+                                    qDebug() << "InteractiveView_hs_triangulation::clear_graphicitems "<< scalefactor ;
 
                                     //qDebug() << "1 ";
-                                    for (auto &item : triangulationItems)
+                                    for (auto &item : hst->triangulationItems)
                                         {
                                           this->ref_mainwindow.scene_.removeItem(item);
                                           delete item;
                                         }
                                     //qDebug() << "1.1 ";
-                                    if (!triangulationItems.empty())
-                                       triangulationItems.clear();
+                                    if (!hst->triangulationItems.empty())
+                                        hst->triangulationItems.clear();
 
                                     //qDebug() << "2 ";
-                                    for (auto item : textItems)
+                                    for (auto item : hst->textItems)
                                         {
                                           this->ref_mainwindow.scene_.removeItem(item);
                                           delete item;
                                         }
                                     //qDebug() << "2.1 ";
-                                    if (!textItems.empty())
-                                       textItems.clear();
+                                    if (!hst->textItems.empty())
+                                        hst->textItems.clear();
 
                                     //qDebug() << "3 ";
-                                    if(ctriangulationItem!=nullptr)
-                                    this->ref_mainwindow.scene_.removeItem(ctriangulationItem);
+                                    if(hst->ctriangulationItem!=nullptr)
+                                    this->ref_mainwindow.scene_.removeItem(hst->ctriangulationItem);
                                     //qDebug() << "3.1 ";
-                                    delete ctriangulationItem;
+                                    delete hst->ctriangulationItem;
 
 
-                                     if(sp.elipse_source!=nullptr &&sp.elipse_target!=nullptr )
+                                     if(hst->sp.elipse_source!=nullptr && hst->sp.elipse_target!=nullptr )
                                      {
-                                     this->ref_mainwindow.scene_.removeItem(sp.elipse_source);
-                                     this->ref_mainwindow.scene_.removeItem(sp.elipse_target);
+                                     this->ref_mainwindow.scene_.removeItem(hst->sp.elipse_source);
+                                     this->ref_mainwindow.scene_.removeItem(hst->sp.elipse_target);
                                      }
 
                                     qDebug() << "3.2 ";
-                                    if(sp.sp_size())
+                                    if(hst->sp.sp_size())
                                       {
                                        //this->ref_mainwindow.scene_.removeItem(sp.v_cdt_gi.back());
-                                         for (auto & a:  sp.v_cdt_gi)
+                                         for (auto & a: hst->sp.v_cdt_gi)
                                              {
                                                  this->ref_mainwindow.scene_.removeItem(a);
                                                 // delete a;
                                              }
                                          qDebug() << "3.3 ";
-                                         sp.v_cdt_gi.clear();
+                                         hst->sp.v_cdt_gi.clear();
                                       }
 
                                     //qDebug() << "4 ";
-                                    for (auto item : ctextItems)
+                                    for (auto item : hst->ctextItems)
                                         {
                                           this->ref_mainwindow.scene_.removeItem(item);
                                           delete item;
                                         }
 
                                     //qDebug() << "4.1 ";
-                                    if (!ctextItems.empty())
-                                       ctextItems.clear();
+                                    if (!hst->ctextItems.empty())
+                                        hst->ctextItems.clear();
 
                                     //qDebug() << "5 ";
-                                    this->ref_mainwindow.scene_.removeItem(voronoiItem);
+                                    this->ref_mainwindow.scene_.removeItem(hst->voronoiItem);
 
                                     //qDebug() << "5.1 ";
-                                    delete voronoiItem;
+                                    delete hst->voronoiItem;
                                    }
-
-void InteractiveViewTriangulation::create_graphicitems()
+void InteractiveView_hs_triangulation::create_graphicitems ()
                                    {
-                                    qDebug() << "InteractiveViewTriangulation::create_graphicitems"<< scalefactor ;
-                                    triangulationItems.push_back(new CGAL::Qt::TriangulationGraphicsItem<Delaunay> (&this->dt_, false));
-                                    triangulationItems.back()->setZValue(0.1);
+                                    qDebug() << "InteractiveView_hs_triangulation::create_graphicitems"<< scalefactor ;
+                                    hst->triangulationItems.push_back(new CGAL::Qt::TriangulationGraphicsItem<Delaunay> (&this->hst->dt_, false));
+                                    hst->triangulationItems.back()->setZValue(0.1);
 
-                                    ctriangulationItem = new CGAL::Qt::CTriangulationGraphicsItem<CDT> (&this->cdt_, true);
-                                    ctriangulationItem->setZValue(0.5);
+                                    hst->ctriangulationItem = new CGAL::Qt::CTriangulationGraphicsItem<CDT> (&this->hst->cdt_, true);
+                                    hst->ctriangulationItem->setZValue(0.5);
 
-                                    if (this->sp.sp_size())
-                                        for (auto & a : sp.v_cdt)
+                                    if (this->hst->sp.sp_size())
+                                        for (auto & a : hst->sp.v_cdt)
                                         {
-                                            sp.v_cdt_gi.push_back(new CGAL::Qt::CTriangulationGraphicsItem<CDT> (&a, true));
-                                            sp.v_cdt_gi.back()->setZValue(1);
+                                            hst->sp.v_cdt_gi.push_back(new CGAL::Qt::CTriangulationGraphicsItem<CDT> (&a, true));
+                                            hst->sp.v_cdt_gi.back()->setZValue(1);
                                         }
 
-                                    voronoiItem = new CGAL::Qt::VoronoiGraphicsItem<Delaunay> (&this->dt_);
+                                    hst->voronoiItem = new CGAL::Qt::VoronoiGraphicsItem<Delaunay> (&this->hst->dt_);
                                    }
-
-void InteractiveViewTriangulation::scene_add_graphicitems()
+void InteractiveView_hs_triangulation::scene_add_graphicitems ()
                                    {
-                                    qDebug() << "InteractiveViewTriangulation::scene_add_graphicitems" << scalefactor ;
+                                    qDebug() << "InteractiveView_hs_triangulation::scene_add_graphicitems" << scalefactor ;
 
                                     if (this->flag_triangulation)
                                        {
-                                        if(!triangulationItems.empty())
-                                          ref_mainwindow.scene_.addItem(triangulationItems.back());
+                                        if(!hst->triangulationItems.empty())
+                                          ref_mainwindow.scene_.addItem(hst->triangulationItems.back());
                                           qDebug() << "added delaunay ";
                                        }
 
                                     if (this->flag_ctriangulation)
                                        {
-                                         ref_mainwindow.scene_.addItem(ctriangulationItem);
+                                         ref_mainwindow.scene_.addItem(hst->ctriangulationItem);
                                          qDebug() << "added cdelaunay ";
                                        }
 
                                     if (this->flag_spath)
                                        {
                                         //for (auto & a: sp.v_cdt_gi)
-                                         sp.elipse_source = new QGraphicsEllipseItem (vppt_source_target.first.x() - 5/scale_factor(), vppt_source_target.first.y() - 5/scale_factor(), 10/scale_factor(), 10/scale_factor());
-                                         sp.elipse_target = new QGraphicsEllipseItem (vppt_source_target.second.x() - 5/scale_factor(), vppt_source_target.second.y() - 5/scale_factor(), 10/scale_factor(), 10/scale_factor());
+                                        hst->sp.elipse_source = new QGraphicsEllipseItem (hst->vppt_source_target.first.x() - 5/scale_factor(), hst->vppt_source_target.first.y() - 5/scale_factor(), 10/scale_factor(), 10/scale_factor());
+                                        hst->sp.elipse_target = new QGraphicsEllipseItem (hst->vppt_source_target.second.x() - 5/scale_factor(), hst->vppt_source_target.second.y() - 5/scale_factor(), 10/scale_factor(), 10/scale_factor());
 
-                                        ref_mainwindow.scene_.addItem(sp.elipse_source);
-                                        ref_mainwindow.scene_.addItem(sp.elipse_target);
+                                        ref_mainwindow.scene_.addItem(hst->sp.elipse_source);
+                                        ref_mainwindow.scene_.addItem(hst->sp.elipse_target);
                                        }
 
                                     if (this->flag_spath)
                                        {
-                                        if (sp.sp_size() && pathindex < sp.v_cdt_gi.size())
+                                        if (hst->sp.sp_size() && pathindex < hst->sp.v_cdt_gi.size())
                                            {
                                            // for (auto & a: sp.v_cdt_gi)
                                                {
-                                                ref_mainwindow.scene_.addItem(sp.v_cdt_gi.at(pathindex));
+                                                ref_mainwindow.scene_.addItem(hst->sp.v_cdt_gi.at(pathindex));
                                                }
                                            }
                                        }
 
                                     if (this->flag_voronoi)
                                        {
-                                         ref_mainwindow.scene_.addItem(voronoiItem);
+                                         ref_mainwindow.scene_.addItem(hst->voronoiItem);
                                          qDebug() << "added voronoi ";
                                        }
 
                                    }
-void InteractiveViewTriangulation::set_textitems ()
+void InteractiveView_hs_triangulation::set_textitems ()
                                     {
-                                      qDebug() << "InteractiveViewTriangulation::set_textitems" << scalefactor ;
+                                      qDebug() << "InteractiveView_hs_triangulation::set_textitems" << scalefactor ;
                                       set_textitems_dt();
                                       set_textitems_ct();
                                     }
-void InteractiveViewTriangulation::set_textitems_dt ()
+void InteractiveView_hs_triangulation::set_textitems_dt ()
                                     {
-                                      qDebug() << "InteractiveViewTriangulation::set_textitems_dt"<< scalefactor  ;
+                                      qDebug() << "InteractiveView_hs_triangulation::set_textitems_dt"<< scalefactor  ;
 
                                       QFont font("Helvetica", fontSize);
                                       font.setPointSizeF(font.pointSizeF() /* /scalefactor */);
 
-                                      for (auto it = dt_.finite_vertices_begin(); it != dt_.finite_vertices_end(); ++it)
+                                      for (auto it = this->hst->dt_.finite_vertices_begin(); it != hst->dt_.finite_vertices_end(); ++it)
                                           {
                                             // qDebug() << "Point: " << it->point() ;
 
@@ -518,35 +344,34 @@ void InteractiveViewTriangulation::set_textitems_dt ()
 
                                              QString text = "(" + QString::fromStdString(ssx.str()) + "," + QString::fromStdString(ssy.str())   + ")"  ;
 
-                                             textItems.push_back(createTextItem(QPointF(it->point().x(), it->point().y()), text));
-                                             textItems.back()->setFont(font);
+                                             hst->textItems.push_back(createTextItem(QPointF(it->point().x(), it->point().y()), text));
+                                             hst->textItems.back()->setFont(font);
                                           }
 
                                     }
-void InteractiveViewTriangulation::set_textitems_ct ()
+void InteractiveView_hs_triangulation::set_textitems_ct ()
                                     {
-                                      qDebug() << "InteractiveViewTriangulation::set_textitems_ct"<< scalefactor  ;
+                                      qDebug() << "InteractiveView_hs_triangulation::set_textitems_ct"<< scalefactor  ;
 
                                       QFont font("Helvetica", fontSize);
 
                                       font.setPointSizeF(font.pointSizeF() /* / scalefactor*/);
 
                                       size_t count = 0;
-                                      for (auto it = cdt_.finite_vertices_begin(); it != cdt_.finite_vertices_end(); ++it, ++count)
+                                      for (auto it = hst->cdt_.finite_vertices_begin(); it != hst->cdt_.finite_vertices_end(); ++it, ++count)
                                           {
                                             //qDebug() << "Point: " << it->point() ;
                                             QString text = QString::fromStdString(std::to_string(count));
-                                            ctextItems.push_back(createTextItem(QPointF(it->point().x(), it->point().y()), text));
-                                            ctextItems.back()->setFont(font);
+                                            hst->ctextItems.push_back(createTextItem(QPointF(it->point().x(), it->point().y()), text));
+                                            hst->ctextItems.back()->setFont(font);
                                           }
                                     }
-
-void InteractiveViewTriangulation::scene_add_textitems()
+void InteractiveView_hs_triangulation::scene_add_textitems()
                                    {
-                                    qDebug() << "InteractiveViewTriangulation::scene_add_textitems" << scalefactor ;
+                                    qDebug() << "InteractiveView_hs_triangulation::scene_add_textitems" << scalefactor ;
                                     if (this->flag_triangulation)
                                        {
-                                        for (auto a : textItems)
+                                        for (auto a : hst->textItems)
                                             {
                                               ref_mainwindow.scene_.addItem(a);
                                               //qDebug() << "added point ";
@@ -555,20 +380,17 @@ void InteractiveViewTriangulation::scene_add_textitems()
 
                                     if (this->flag_ctriangulation)
                                        {
-                                        for (auto a : ctextItems)
+                                        for (auto a : hst->ctextItems)
                                             {
                                               ref_mainwindow.scene_.addItem(a);
                                               //qDebug() << "added point ";
                                             }
                                        }
                                    }
-
-void InteractiveViewTriangulation::setpens ()
+void InteractiveView_hs_triangulation::setpens ()
                                   {
-                                    qDebug() << "InteractiveViewTriangulation::setpens" << scalefactor ;
+                                    qDebug() << "InteractiveView_hs_triangulation::setpens" << scalefactor ;
 
-                                    qDebug() << "1" << scalefactor;
-                                    //QColor(255,184,191, 255)
                                     //SHORTEST PATH
                                     QPen verticepen_gray(Qt::gray);
                                     verticepen_gray.setWidthF(3);
@@ -580,7 +402,6 @@ void InteractiveViewTriangulation::setpens ()
                                     edgespen_gray.setCosmetic(true);
 
 
-                                    qDebug() << "2" << scalefactor;
                                     //TRIANGULATION
                                     QPen verticepen_dt(Qt::magenta);
                                     verticepen_dt.setWidthF(3);
@@ -591,20 +412,14 @@ void InteractiveViewTriangulation::setpens ()
                                     edgespen_dt.setWidthF(0.2);
                                     edgespen_dt.setCosmetic(true);
 
-
-                                    qDebug() << "3" << scalefactor;
-
-                                    if(!triangulationItems.empty())
-                                      for (auto & a : triangulationItems)
+                                    if(!hst->triangulationItems.empty())
+                                      for (auto & a : hst->triangulationItems)
                                           {
                                            if (a->visibleVertices())
                                                a->setVerticesPen(verticepen_dt);
                                            if (a->visibleEdges())
                                                a->setEdgesPen(edgespen_dt);
                                           }
-
-
-                                    qDebug() << "4" << scalefactor;
 
                                     //CONSTRAINED
                                     QPen verticepen_cdt(Qt::cyan);
@@ -616,95 +431,97 @@ void InteractiveViewTriangulation::setpens ()
                                     edgespen_cdt.setWidthF(0.1);
                                     edgespen_cdt.setCosmetic(true);
 
-                                    ctriangulationItem->setVerticesPen(verticepen_cdt);
-                                    ctriangulationItem->setEdgesPen(edgespen_cdt);
-
-
-                                    qDebug() << "5";
+                                    hst->ctriangulationItem->setVerticesPen(verticepen_cdt);
+                                    hst->ctriangulationItem->setEdgesPen(edgespen_cdt);
 
                                     //SHORTEST PATH
                                     QPen verticepen_sp(Qt::red);
                                     verticepen_sp.setWidthF(6);
                                     verticepen_sp.setCosmetic(true);
-                                    qDebug() << "5.1";
 
                                     QPen edgespen_sp(Qt::red);
                                     edgespen_sp.setStyle(Qt::DashLine);  // Line style: Solid
                                     edgespen_sp.setWidthF(1);
                                     edgespen_sp.setCosmetic(true);
-                                    qDebug() << "5.2";
 
-                                    if (this->sp.sp_size())
+                                    if (this->hst->sp.sp_size())
                                        {
-                                        for (auto & a : sp.v_cdt_gi)
+                                        for (auto & a : hst->sp.v_cdt_gi)
                                            {
                                             a->setVerticesPen(verticepen_gray);
                                             a->setEdgesPen(edgespen_gray);
                                            }
 
-                                        sp.v_cdt_gi.back()->setVerticesPen(verticepen_sp);
-                                        sp.v_cdt_gi.back()->setEdgesPen(edgespen_sp);
+                                        hst->sp.v_cdt_gi.back()->setVerticesPen(verticepen_sp);
+                                        hst->sp.v_cdt_gi.back()->setEdgesPen(edgespen_sp);
 
-                                        qDebug() << "5.3";
 
-                                        sp.elipse_source->setPen(verticepen_sp);
-                                        sp.elipse_target->setPen(verticepen_sp);
+                                       hst->sp.elipse_source->setPen(verticepen_sp);
+                                       hst->sp.elipse_target->setPen(verticepen_sp);
                                        }
                                    
 
-                                 
-
-
-                                    qDebug() << "6";
-
+                         
                                     //VORONOI
                                     QPen vedgespen(Qt::cyan);
                                     vedgespen.setStyle(Qt::SolidLine);  // Line style: Solid
                                     vedgespen.setWidthF(1);
                                     vedgespen.setCosmetic(true);
 
-                                    if(voronoiItem != nullptr)
+                                    if(hst->voronoiItem != nullptr)
                                       {
-                                       voronoiItem->setEdgesPen(vedgespen);
+                                        hst->voronoiItem->setEdgesPen(vedgespen);
                                       }
 
-                                    qDebug() << "InteractiveViewTriangulation::setpens exit" ;
+                                    qDebug() << "InteractiveView_hs_triangulation::setpens exit" ;
                                   }
 
 
 
-/// EXECUTION LOG
-///
-size_t log_size = 0;
 
-std::string literal = R"({
-                           "model": "text-davinci-003",
-                           "prompt": "explain under 100 tokens, in english(under 50 tokens),  then write in japanese: ",
-                           "max_tokens": 100,
-                           "temperature": 0
-                       })";
 
-static std::string replaceLFWithEscapeSequence(const std::string& input)
-                                              {
-                                                  std::string result;
-                                                  for (char ch : input) {
-                                                      if (ch == '\n') {
-                                                          result += "\\u000A";
-                                                      } else {
-                                                          result += ch;
-                                                      }
-                                                  }
-                                                  return result;
-                                              }
 
-//std::string literal = "{\n\"model\": \"text-davinci-003\",\n\"prompt\": \"explain: \",\n\"max_tokens\": 20,\n\"temperature\": 0\n}";
 
-size_t position_insert = literal.find("ese: ");
+void InteractiveView_hs_triangulation::f1_1_source_target_shortestpath(Point_2 pt)
+{
+    qDebug() << "InteractiveView_hs_triangulation::f1_1_source_target_shortestpath";
+    if (!hst->flag_input_st) //source
+    {
+        hst->flag_input_st = 1;
+        hst->vppt_source_target.first = pt; // Replace with your source point
+    }
+    else if (hst->flag_input_st == 1) //target
+    {
+        hst->flag_input_st = 0;
+        hst->vppt_source_target.second = pt; // Replace with your source point
+        hst->f1_shortest_path(this->hst->cdt_, this);
+
+        if (this->hst->sp.sp_size())
+            this->pathindex = this->hst->sp.v_cdt.size() - 1;//cannot refer to v_cdt_gi because latest gi was not created yet
+
+        scene_refresh();
+        this->update();
+    }
+}
+
+
+
+void InteractiveView_hs_triangulation::save_to_file_paths(QString filePath_ids, QString filePath_coord)
+    {
+
+        qDebug() << "InteractiveView_hs_triangulation::save_to_file_paths";
+        this->hst->f1_7_save_to_file_paths(filePath_ids, filePath_coord);
+    }
+
+
+/// LOG
+
+//size_t position_insert = literal.find("ese: ");
 size_t countlines = 0;
 size_t count_updates = 0;
-void InteractiveViewTriangulation::update_log ()
+void InteractiveView_hs_triangulation::update_log ()
                                    {
-                                    qDebug() << "InteractiveViewTriangulation::update_log: " << hs_vector_log.size()  ;
+                                    qDebug() << "InteractiveView_hs_triangulation::update_log: " << hs_vector_log.size()  ;
                                     if (flag_triangulation)
                                      if (int dif = hs_vector_log.size() - log_size > 0)
                                         {
@@ -740,18 +557,19 @@ void InteractiveViewTriangulation::update_log ()
                                     textEditL.moveCursor(QTextCursor::End); // s
                                    }
 
-QGraphicsTextItem*  InteractiveViewTriangulation::createTextItem(QPointF position, QString text)
+QGraphicsTextItem*  
+       InteractiveView_hs_triangulation::createTextItem(QPointF position, QString text)
                                                  {
-                                                   qDebug() << "InteractiveViewTriangulation::createTextItem" ;
+                                                   qDebug() << "InteractiveView_hs_triangulation::createTextItem" ;
                                                    QGraphicsTextItem* textItem = new QGraphicsTextItem(text);
                                                    textItem->setPos(position);
                                                    return textItem;
                                                  }
 
-double InteractiveViewTriangulation::scale_factor ()
+double InteractiveView_hs_triangulation::scale_factor ()
                                                   {
-                                                    qDebug() << "InteractiveViewTriangulation::scale_factor" ;
-                                                    CGAL::Bbox_2 bb = CGAL::bbox_2(dt_.points_begin(), dt_.points_end());
+                                                    qDebug() << "InteractiveView_hs_triangulation::scale_factor" ;
+                                                    CGAL::Bbox_2 bb = CGAL::bbox_2(hst->dt_.points_begin(), hst->dt_.points_end());
 
                                                     double bounding_box_width = bb.xmax() - bb.xmin();
                                                     double bounding_box_height = bb.ymax() - bb.ymin();
@@ -768,9 +586,8 @@ double InteractiveViewTriangulation::scale_factor ()
                                                     return scalefactor;
                                                   }
 
-
-void InteractiveViewTriangulation::sync_flag_sets(){
-                                                    qDebug() << "InteractiveViewTriangulation::sync_flag_sets" ;
+void InteractiveView_hs_triangulation::sync_flag_sets(){
+                                                    qDebug() << "InteractiveView_hs_triangulation::sync_flag_sets" ;
 
                                                     //check inverse
                                                      if (flag_triangulation)
@@ -829,4 +646,25 @@ void InteractiveViewTriangulation::sync_flag_sets(){
                                                   }
 
 
+static std::string replaceLFWithEscapeSequence(const std::string& input)
+{
+    std::string result;
+    for (char ch : input) {
+        if (ch == '\n') {
+            result += "\\u000A";
+        }
+        else {
+            result += ch;
+        }
+    }
+    return result;
+}
 
+std::string literal = R"({
+                           "model": "text-davinci-003",
+                           "prompt": "explain under 100 tokens, in english(under 50 tokens),  then write in japanese: ",
+                           "max_tokens": 100,
+                           "temperature": 0
+                       })";
+
+//std::string literal = "{\n\"model\": \"text-davinci-003\",\n\"prompt\": \"explain: \",\n\"max_tokens\": 20,\n\"temperature\": 0\n}";

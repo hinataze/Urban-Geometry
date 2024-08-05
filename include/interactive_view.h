@@ -11,24 +11,43 @@
 
 #include <QPlainTextEdit>
 
+#include <include/HS_Delaunay_triangulation_2.h>
+#include <include/HS_TriangulationGraphicsItem.h>
+#include <include/HS_CTriangulationGraphicsItem.h>
+
+//SHORTEST PATH
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Triangulation_vertex_base_with_id_2.h>
+#include <CGAL/boost/graph/graph_traits_Delaunay_triangulation_2.h>
+
+#include <CGAL/Qt/GraphicsViewNavigation.h>
+#include <CGAL/Qt/VoronoiGraphicsItem.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
 
 
+typedef CGAL::Exact_predicates_inexact_constructions_kernel             K;
+typedef K::Point_2                                                      Point_2;
+typedef CGAL::Delaunay_triangulation_2<K, CGAL::Triangulation_data_structure_2 <CGAL::Triangulation_vertex_base_with_id_2<K>, CGAL::Triangulation_face_base_2<K>>> Delaunay;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K>                   CDT;
 
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>> Graph;
-typedef boost::graph_traits<Graph>::vertex_descriptor Boost_Vertex;
 
-class InteractiveViewTriangulation : public QGraphicsView
+class hs_triangulation;
+
+class InteractiveView_hs_triangulation : public QGraphicsView
                                    {
                                    Q_OBJECT
                                    friend class MainWindow;
 
-                                   friend void deletepoint (QPoint, InteractiveViewTriangulation *);
-                                   friend void insertpoint (QPoint, InteractiveViewTriangulation *);
-                                   friend void define_source_target (QPoint, InteractiveViewTriangulation *);
-
+                                   friend void deletepoint(QPoint, InteractiveView_hs_triangulation*);
+                                   friend void insertpoint(QPoint, InteractiveView_hs_triangulation*);
 
                                    public:
-                                       InteractiveViewTriangulation (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent = nullptr);
+                                       MainWindow& ref_mainwindow;
+
+                                       InteractiveView_hs_triangulation (CDT &cdt, Delaunay& dt, MainWindow &mw, QMainWindow* parent = nullptr);
+
+                                       size_t log_size = 0;
 
                                        QPlainTextEdit  textEditL;
                                        QPlainTextEdit  textEditR;
@@ -43,8 +62,6 @@ class InteractiveViewTriangulation : public QGraphicsView
                                        bool flag_message_CDT = false;
                                        bool flag_message_open = false;
                                        bool flag_message_save = false;
-
-                                       MainWindow  & ref_mainwindow;
 
                                        bool flag_scale_first = true;
 
@@ -62,26 +79,17 @@ class InteractiveViewTriangulation : public QGraphicsView
                                        int  pathindex = 0;
 
                                        double scale_factor ();
-
-                                       void source_target_shortestpath (Point_2);
-
+                                       void f1_1_source_target_shortestpath (Point_2);
                                        void sync_flag_sets();
 
 
                                    protected:
 
                                        void wheelEvent(QWheelEvent *event) override;
-
                                        void mousePressEvent (QMouseEvent* event) override;
-
                                        void keyPressEvent (QKeyEvent *event) override;
-
-
                                        void mouseReleaseEvent(QMouseEvent* event) override;
-
                                        void mouseMoveEvent(QMouseEvent* event) override;
-
-
 
 
                                        QGraphicsTextItem* createTextItem (QPointF position, QString text);
@@ -99,77 +107,31 @@ class InteractiveViewTriangulation : public QGraphicsView
                                        void setpens ();
                                        void update_log();
 
+                                       CGAL::Qt::GraphicsViewNavigation navigation;
+                                     
+                                    
                                       void shortest_path();
-
-
-
-
-                                      size_t flag_input_st = 0;
-
-
                                       void save_paths_coordinates (std::vector <CDT> & v_paths);
                                       void save_paths_indices (std::vector <std::vector<size_t>> & v_paths_ids);
 
+                                      void save_to_file_paths (QString filePath_ids, QString filePath_coord);
 
                                       private:
 
-                                       Delaunay& dt_;
+                                      std::shared_ptr <hs_triangulation> hst;
+                                      double fontSize = 6;
 
-                                       CDT &cdt_;
+                                      double scalefactor = 1;
 
-                                       CGAL::Qt::GraphicsViewNavigation navigation;
-
-                                       std::vector<CGAL::Qt::TriangulationGraphicsItem<Delaunay>*> triangulationItems = { nullptr };
-                                       std::vector <QGraphicsTextItem*> textItems;
-
-                                       CGAL::Qt::VoronoiGraphicsItem<Delaunay> * voronoiItem = nullptr;
-
-                                       CGAL::Qt::CTriangulationGraphicsItem<CDT> * ctriangulationItem = nullptr;
-                                       std::vector <QGraphicsTextItem*> ctextItems;
-
-                                       double fontSize = 6;
-
-                                       double scalefactor = 1;
-
-                                       public:
-                                       std::pair <Point_2, Point_2> vppt_source_target;
-                                       struct shortestpath {
-                                                          std::vector<Point_2> v_source;
-                                                          std::vector<Point_2> v_target;
-                                                          std::vector<Boost_Vertex> bv_source;
-                                                          std::vector<Boost_Vertex> bv_target;
-                                                          std::vector <CDT> v_cdt;
-                                                          std::vector<CGAL::Qt::CTriangulationGraphicsItem<CDT>*> v_cdt_gi;
-                                                          std::vector <std::vector <CDT>> vv_paths;
-                                                          std::vector <std::vector <std::vector<size_t>>> vv_paths_ids;
-
-                                                          std::vector <std::vector<Boost_Vertex>> v_predecessors;
-                                                          std::vector <std::vector<double>> v_distances;
-
-                                                          QGraphicsEllipseItem* elipse_source = nullptr;
-                                                          QGraphicsEllipseItem* elipse_target = nullptr;
-
-                                                          size_t sp_size() {
-                                                                             qDebug() << "shortestpath::sp_size" ;
-                                                                             qDebug() << v_source.size() ;
-                                                                             qDebug() << v_target.size () ;
-                                                                             qDebug() << bv_source.size() ;
-                                                                             qDebug() << bv_target.size () ;
-                                                                             qDebug() << v_cdt.size() ;
-                                                                             qDebug() << v_cdt_gi.size() ;
-                                                                             qDebug() << "shortestpath::sp_size exit" ;
-                                                                             return v_cdt.size();
-                                                                           }
-                                                            } sp;
-
-
-
-                                       bool panning;
-                                       QPointF lastPanPos;
+                                      bool panning;
+                                      QPointF lastPanPos;
 
                                    };
+
+
+
 static const char* message_r_DT_start = R"(
-You are in Delaunay Triangulation Mode.
+You are in Delaunay Triangulation (DT) Mode.
 
 In this mode you can add / remove points by left / right clicking on the canvas.
 You can also see the code that runs everytime you insert or remove a point (limited).
@@ -182,11 +144,8 @@ HINT: Make sure to toggle View > Voronoi to check the corresponding Voronoi diag
 )";
 
 
-
-
-
 static const char* message_r_DT = R"(
-Delaunay Triangulation:
+Delaunay Triangulation (DT):
 
 In this mode you can add / remove points by left / right clicking on the canvas.
 You can also see the code that runs everytime you insert or remove a point (limited).
@@ -197,7 +156,7 @@ HINT: Make sure to toggle View > Voronoi to check the corresponding Voronoi diag
 )";
 
 static const char* message_r_CDT = R"(
-Constrained Delaunay Triangulation:
+Constrained Delaunay Triangulation (CDT):
 
 In this mode you can select two points and calculate the Shortest Path between them. Just click on the image and try.
 
@@ -208,11 +167,75 @@ static const char* message_r_open = R"(
 Open your own files! This app accepts files:
 
 In geojson format, you need one file with the nodes and one file with the links.
-Check sample files in https://www.geospatial.jp/ckan/dataset/0401
+Check sample files in "<a href=\"https://www.geospatial.jp/ckan/dataset/0401\">www.geospatial.jp</a>.</p>"
 
 In txt format, you also need both nodes and links' files.
 Check the "Sample Files" in this App's folder!
 )";
+
+
+static QString message_open = "<p>Open your own files! This app accepts files:<br>"
+"In geojson format, check sample files in <a href=\"https://www.geospatial.jp/ckan/dataset/0401\">www.geospatial.jp</a>.<br>"
+"In txt format, check the 'Sample Files' in this App's folder.</br>"
+"PS: For CDT you need one file with the nodes and one file with the links!<p>";
+
+
+static std::string s_deletepoint = R"(
+
+// this function doesnt actually delete the point, it creates a new triangulation object with all the point except for the one you clicked on!
+void deletepoint (QPoint mousePoint , InteractiveView_hs_triangulation * that) 
+{
+    // Convert the clicked mouse point to scene coordinates
+    QPointF scenePoint = that->mapToScene(mousePoint); 
+    
+    // Create a query point from the scene coordinates
+    Point queryPoint(scenePoint.x(), scenePoint.y()); 
+
+    // Variable to hold the closest vertex to the clicked point
+    Delaunay::Vertex_handle closestVertex = nullptr;
+    // Check if there are any finite vertices in the triangulation
+    if (that->dt_.finite_vertices_begin() != that->dt_.finite_vertices_end())
+    {
+        // Find the nearest point in the triangulation to the query point
+        find_nearest_point(closestVertex, queryPoint, that->dt_);
+    }
+    else
+    {
+        // Show a warning message if the network is empty
+        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
+    }
+
+    // Check if the closest vertex is valid
+    if (closestVertex != nullptr && closestVertex->is_valid())
+    {
+        // Debugging output: print the coordinates of the vertex to be deleted
+        qDebug() << "delete vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y();
+
+        // Store the point of the vertex to be deleted
+        auto point = closestVertex->point();
+        // Create a new triangulation object to hold the remaining points
+        Triangulation dt_copy;
+        // Iterate through all the finite vertices in the current triangulation
+        for (auto vertex = that->dt_.finite_vertices_begin(); vertex != that->dt_.finite_vertices_end(); ++vertex)
+        {
+            // Add all points except for the one to be deleted to the new triangulation
+            if (vertex->point() != point)
+            {
+                dt_copy.insert(vertex->point());
+            }
+        }
+        // Replace the current triangulation with the new one
+        that->dt_ = dt_copy;
+        // Debugging output: confirm the vertex has been deleted
+        qDebug() << "vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y() << "deleted";
+        qDebug() << "vertex x" << point.x() << " y " << point.y() << "deleted!!";
+    }
+    else if (closestVertex == nullptr)
+    {
+        // Show a warning message if no point was found
+        QMessageBox::warning(nullptr, "Warning", "No Point was found.");
+    }
+})";
 
 
 

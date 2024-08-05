@@ -19,31 +19,112 @@
 #ifndef HS_SHORTEST_PATH_H
 #define HS_SHORTEST_PATH_H
 
-#include <include/mainwindow.h>
-
 #include <include/interactive_view.h>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <CGAL/boost/graph/dijkstra_shortest_paths.h>
 
 
+//SHORTEST PATH
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <include/HS_Delaunay_triangulation_2.h>
+#include <include/HS_TriangulationGraphicsItem.h>
+#include <include/HS_CTriangulationGraphicsItem.h>
+
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;                                                                                                      
+typedef K::Point_2 Point_2;
+typedef CGAL::Delaunay_triangulation_2<K, CGAL::Triangulation_data_structure_2 <CGAL::Triangulation_vertex_base_with_id_2<K>, CGAL::Triangulation_face_base_2<K>>>  Triangulation;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K> CDT;
+typedef CDT::Vertex_handle Vertex_handle;
+
+
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>> Graph;
 typedef boost::graph_traits<Graph>::vertex_descriptor Boost_Vertex;
 
+struct shortestpath;
 
-void find_nearest_point (CDT::Vertex_handle &nearest_vertex, Point_2 pt , CDT  & cdt_);
-void find_nearest_point (Triangulation::Vertex_handle &nearest_vertex, Point_2 pt , Triangulation  & dt_);
+class hs_triangulation
+{
+  friend class InteractiveView_hs_triangulation;
 
-void shortest_path_2 (CDT &cdt_, InteractiveViewTriangulation *);
+   public:
+   hs_triangulation(CDT& cdt, Delaunay& dt) : cdt_(cdt), dt_(dt) {}
 
-void identify_target (CDT::Vertex_handle &source, CDT::Vertex_handle &target, std::pair <Point_2, Point_2> ppt, CDT & triangulation);
-void add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation);
-void add_edges (Graph & graph, std::map <CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation);
-void print_shortest_paths_all (Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map);
-void print_shortest_path_only (bool & flag_invalid_path, CDT::Vertex_handle & source, Boost_Vertex & target_vertex, Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT &, InteractiveViewTriangulation * );
-void make_triangulation (bool & flag_invalid_path, Boost_Vertex & target_vertex, Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation, InteractiveViewTriangulation *);
-void save_to_file_paths(QString, QString, InteractiveViewTriangulation * ptr_view);
-void save_paths_coordinates (QString, std::vector <CDT> & v_paths, InteractiveViewTriangulation * ptr_view);
-void save_paths_indices (QString, std::vector <std::vector<size_t>>& v_paths_ids, InteractiveViewTriangulation * ptr_view);
+
+  
+
+   size_t flag_input_st = 0;
+   
+   std::pair <Point_2, Point_2> vppt_source_target;
+   
+   Delaunay& dt_;
+   CDT& cdt_;
+   
+   std::vector<CGAL::Qt::TriangulationGraphicsItem<Delaunay>*> triangulationItems = { nullptr }; // dt 
+   CGAL::Qt::CTriangulationGraphicsItem<CDT>* ctriangulationItem = nullptr;  // cdt
+   
+   std::vector <QGraphicsTextItem*> textItems; // dt 
+   std::vector <QGraphicsTextItem*> ctextItems; // cdt
+   
+   CGAL::Qt::VoronoiGraphicsItem<Delaunay>* voronoiItem = nullptr; // dt only
+   
+   
+   struct shortestpath {
+        std::vector<Point_2> v_source;
+        std::vector<Point_2> v_target;
+        std::vector<Boost_Vertex> bv_source;
+        std::vector<Boost_Vertex> bv_target;
+        std::vector <CDT> v_cdt;
+        std::vector<CGAL::Qt::CTriangulationGraphicsItem<CDT>*> v_cdt_gi;
+        std::vector <std::vector <CDT>> vv_paths;
+        std::vector <std::vector <std::vector<size_t>>> vv_paths_ids;
+
+        std::vector <std::vector<Boost_Vertex>> v_predecessors;
+        std::vector <std::vector<double>> v_distances;
+
+        QGraphicsEllipseItem* elipse_source = nullptr;
+        QGraphicsEllipseItem* elipse_target = nullptr;
+
+        size_t sp_size() {
+            qDebug() << "shortestpath::sp_size";
+            qDebug() << v_source.size();
+            qDebug() << v_target.size();
+            qDebug() << bv_source.size();
+            qDebug() << bv_target.size();
+            qDebug() << v_cdt.size();
+            qDebug() << v_cdt_gi.size();
+            qDebug() << "shortestpath::sp_size exit";
+            return v_cdt.size();
+        }
+    } sp;
+
+
+
+  void insertpoint(QPointF);
+
+  void deletepoint(QPoint, InteractiveView_hs_triangulation*);
+
+  void f1_define_source_target(QPoint mousePoint, InteractiveView_hs_triangulation* that);
+  void f1_shortest_path(CDT& cdt_, InteractiveView_hs_triangulation*);
+  void f1_2_find_nearest_point(CDT::Vertex_handle& nearest_vertex, Point_2 pt, CDT& cdt_);
+  void f1_2_find_nearest_point(Triangulation::Vertex_handle& nearest_vertex, Point_2 pt, Triangulation& dt_);
+  void f1_1_identify_target(CDT::Vertex_handle& source, CDT::Vertex_handle& target, std::pair <Point_2, Point_2> ppt, CDT& triangulation);
+  void f1_3_add_vertices(Graph& graph, std::map<CDT::Vertex_handle, Boost_Vertex>& vertex_map, CDT& triangulation);
+  void f1_4_add_edges(Graph& graph, std::map <CDT::Vertex_handle, Boost_Vertex>& vertex_map, CDT& triangulation);
+  void f1_5_print_shortest_paths_all(Boost_Vertex& source_vertex, std::vector<double>& distances, std::vector<Boost_Vertex>& predecessors, std::map<CDT::Vertex_handle, Boost_Vertex>& vertex_map);
+  void f1_5_print_shortest_path_only(bool& flag_invalid_path, CDT::Vertex_handle& source, Boost_Vertex& target_vertex, Boost_Vertex& source_vertex, std::vector<double>& distances, std::vector<Boost_Vertex>& predecessors, std::map<CDT::Vertex_handle, Boost_Vertex>& vertex_map, CDT&);
+  void f1_6_make_triangulation(bool& flag_invalid_path, Boost_Vertex& target_vertex, Boost_Vertex& source_vertex, std::vector<double>& distances, std::vector<Boost_Vertex>& predecessors, std::map<CDT::Vertex_handle, Boost_Vertex>& vertex_map, CDT& triangulation);
+  void f1_7_save_to_file_paths(QString, QString);
+  void f1_7_1_save_paths_coordinates(QString path_coord, std::vector <CDT>& v_paths);
+  void f1_7_2_save_paths_indices(QString, std::vector <std::vector<size_t>>& v_paths_ids);
+
+};
+
+
+
+
+
 
 #endif // HS_SHORTEST_PATH_H

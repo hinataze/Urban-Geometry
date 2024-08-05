@@ -32,6 +32,7 @@
 
 #endif //CGAL_TRIANGULATION_2_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 
+#include <QDebug>
 
 //passed to mainwindow.h to keep functions without using this header
 static std::vector <std::string> hs_vector_log;

@@ -1,14 +1,98 @@
 #include <include/hs_shortest_path.h>
 
-typedef K::FT FT;
-void find_nearest_point (CDT::Vertex_handle  & cdt_handle_nearest, Point_2 pt , CDT  & cdt_)
-                        {
-                          qDebug() << "find_nearest_point constrained" ;
 
-                         Point nearest_point;
+
+
+
+typedef K::FT FT;
+
+
+void hs_triangulation::insertpoint (QPointF pos)
+{
+    qDebug() << "hs_triangulation::insertpoint";
+   
+    // Convert the mouse click position to world coordinates
+    double x = CGAL::to_double(pos.x());
+    double y = CGAL::to_double(pos.y());
+    
+    this->dt_.insert(Point_2(x, y)); //activate if i want to edit the triangulation
+}
+
+
+
+void hs_triangulation::deletepoint (QPoint mousePoint, InteractiveView_hs_triangulation* that)
+{
+    qDebug() << "hs_triangulation::deletepoint";
+
+    hs_update_log_all("deletepoint", s_deletepoint);
+
+    QPointF scenePoint = that->mapToScene(mousePoint);
+
+    // Find the closest vertex to the clicked point.
+    Point_2 queryPoint(scenePoint.x(), scenePoint.y());
+
+    Delaunay::Vertex_handle closestVertex = nullptr;
+    if (this->dt_.finite_vertices_begin() != this->dt_.finite_vertices_end())
+    {
+        this->f1_2_find_nearest_point(closestVertex, queryPoint, this->dt_);
+    }
+    else
+    {
+        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
+    }
+
+    if (closestVertex != nullptr && closestVertex->is_valid())
+    {
+        qDebug() << "delete vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y();
+        auto point = closestVertex->point();
+        Triangulation dt_copy;
+        for (auto vertex = this->dt_.finite_vertices_begin(); vertex != this->dt_.finite_vertices_end(); ++vertex)
+        {
+            if (vertex->point() != point)
+            {
+                dt_copy.insert(vertex->point());
+            }
+        }
+        this->dt_ = dt_copy;
+        qDebug() << "vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y() << "deleted";
+        qDebug() << "vertex x" << point.x() << " y " << point.y() << "deleted!!";
+    }
+    else  if (closestVertex == nullptr /*|| !closestVertex->is_valid()*/)
+        QMessageBox::warning(nullptr, "Warning", "No Point was found.");
+
+}
+
+void  hs_triangulation::f1_define_source_target (QPoint mousePoint, InteractiveView_hs_triangulation* that)
+{
+    qDebug() << "hs_triangulation::f1_define_source_target";
+    QPointF scenePoint = that->mapToScene(mousePoint);
+
+    // Find the closest vertex to the clicked point.
+    Point_2 queryPoint(scenePoint.x(), scenePoint.y());
+    CDT::Vertex_handle  closestVertex = nullptr;
+    if (this->cdt_.finite_vertices_begin() != this->cdt_.finite_vertices_end())
+    {
+        f1_2_find_nearest_point(closestVertex, queryPoint, this->cdt_);
+    }
+    else
+    {
+        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
+    }
+
+    if (closestVertex != nullptr)
+    {
+        that->f1_1_source_target_shortestpath(closestVertex->point());
+    }
+}
+
+void hs_triangulation::f1_2_find_nearest_point (CDT::Vertex_handle  & cdt_handle_nearest, Point_2 pt , CDT  & cdt_)
+                        {
+                          qDebug() << "hs_triangulation::f1_2_find_nearest_point constrained" ;
+
+                         Point_2 nearest_point;
                          CDT cdt = cdt_;
 
-                          Point query_point(pt.x(), pt.y());
+                          Point_2 query_point(pt.x(), pt.y());
 
                           cdt_handle_nearest = nullptr;
 
@@ -21,7 +105,7 @@ void find_nearest_point (CDT::Vertex_handle  & cdt_handle_nearest, Point_2 pt , 
                                    for (int i = 1; i <= 2; ++i)
                                        {
                                          auto v = e->first->vertex((e->second + i) % 3);
-                                         Point vertex_point = v->point();
+                                         Point_2 vertex_point = v->point();
                                          FT distance = CGAL::squared_distance(query_point, vertex_point);
                                          if (distance < min_distance)
                                             {
@@ -40,20 +124,20 @@ void find_nearest_point (CDT::Vertex_handle  & cdt_handle_nearest, Point_2 pt , 
                                qDebug() << "Nearest point inside the triangulation: (" << nearest_point.x() << ", " << nearest_point.y() << ")" ;
                                qDebug() << "Squared distance to nearest point: " << min_distance ;
                               // qDebug() << "point: " << nearest_point << " handle: " << (cdt_handle_nearest != nullptr? "valid": "null") ;
-                               qDebug() << "InteractiveViewTriangulation::find_nearest_point exit ";
+                               qDebug() << "InteractiveView_hs_triangulation::f1_2_find_nearest_point exit ";
                              }
                              else
                                 QMessageBox::warning(nullptr, "Warning", "No point found.");
                           }
 
-void find_nearest_point (Triangulation::Vertex_handle  & dt_handle_nearest, Point_2 pt , Triangulation  & dt_)
+void hs_triangulation::f1_2_find_nearest_point (Triangulation::Vertex_handle  & dt_handle_nearest, Point_2 pt , Triangulation  & dt_)
                         {
-                             qDebug() << "find_nearest_point delaunay" ;
+                             qDebug() << "hs_triangulation::f1_2_find_nearest_point delaunay" ;
 
-                             Point nearest_point;
+                             Point_2 nearest_point;
                              Delaunay dt = dt_;
 
-                             Point query_point(pt.x(), pt.y());
+                             Point_2 query_point(pt.x(), pt.y());
 
                              dt_handle_nearest = nullptr;
 
@@ -64,7 +148,7 @@ void find_nearest_point (Triangulation::Vertex_handle  & dt_handle_nearest, Poin
                                        for (int i = 1; i <= 2; ++i)
                                        {
                                             auto v = e->first->vertex((e->second + i) % 3);
-                                            Point vertex_point = v->point();
+                                            Point_2 vertex_point = v->point();
                                             FT distance = CGAL::squared_distance(query_point, vertex_point);
                                             if (distance < min_distance)
                                             {
@@ -82,22 +166,22 @@ void find_nearest_point (Triangulation::Vertex_handle  & dt_handle_nearest, Poin
                                 qDebug() << "Nearest point inside the triangulation: (" << nearest_point.x() << ", " << nearest_point.y() << ")" ;
                                 qDebug() << "Squared distance to nearest point: " << min_distance ;
                                 //qDebug() << "point: " << nearest_point << " handle: " << ( dt_handle_nearest->is_valid()? "valid": "null") ;
-                                qDebug() << "InteractiveViewTriangulation::find_nearest_point exit ";
+                                qDebug() << "InteractiveView_hs_triangulation::f1_2_find_nearest_point exit ";
                              }
                              else
                                 QMessageBox::warning(nullptr, "Warning", "No point found.");
                         }
 
-void  shortest_path_2 (CDT & cdt_, InteractiveViewTriangulation *ptr_view)
+void  hs_triangulation::f1_shortest_path (CDT & cdt_, InteractiveView_hs_triangulation *ptr_view)
                       {
-                       qDebug() << "shortest_path_2" ;
+                       qDebug() << "hs_triangulation::f1_shortest_path" ;
                        CDT triangulation = cdt_;  // Initialize your CGAL Delaunay triangulation
 
                        //source and target points
                        qDebug() << "1 is valid?"<< cdt_.is_valid();
                        CDT::Vertex_handle source;//auto is Triangulation::Vertex_handle source
                        CDT::Vertex_handle target;
-                       identify_target(source, target, ptr_view->vppt_source_target, triangulation);
+                       f1_1_identify_target(source, target, this->vppt_source_target, triangulation);
 
                        //nearest point for constrained edges
                        qDebug() << "2";
@@ -105,24 +189,24 @@ void  shortest_path_2 (CDT & cdt_, InteractiveViewTriangulation *ptr_view)
                        CDT::Vertex_handle  closest_target = nullptr;
                        if (source != nullptr && target != nullptr )
                           {
-                          find_nearest_point (closest_source, source->point(), triangulation);
-                          find_nearest_point (closest_target, target->point(), triangulation);
+                         
+                          f1_2_find_nearest_point (closest_source, source->point(), triangulation);
+                       
+                          f1_2_find_nearest_point (closest_target, target->point(), triangulation);
 
-                          qDebug() << "4";
                           Graph graph;
                           std::map<CDT::Vertex_handle, Boost_Vertex> vertex_map;
-                          add_vertices (graph, vertex_map, triangulation);
+                       
+                          f1_3_add_vertices (graph, vertex_map, triangulation);
 
-                           qDebug() << "5";
 
-                           add_edges (graph, vertex_map, triangulation);
+                           f1_4_add_edges (graph, vertex_map, triangulation);
                            // Specify the source vertex for Dijkstra's algorithm
                            // Vertex source_vertex = vertex_map[triangulation.finite_vertices_begin()];
                            Boost_Vertex source_vertex = vertex_map[source];
                            Boost_Vertex target_vertex = vertex_map[target];
                            std::vector<Boost_Vertex> predecessors(boost::num_vertices(graph));
                            std::vector<double> distances(boost::num_vertices(graph));
-                           qDebug() << "11";
 
                            auto simplifycall = boost::predecessor_map(boost::make_iterator_property_map(predecessors.begin(), boost::get(boost::vertex_index, graph))).distance_map(boost::make_iterator_property_map(distances.begin(),boost::get(boost::vertex_index, graph)));
 
@@ -131,24 +215,16 @@ void  shortest_path_2 (CDT & cdt_, InteractiveViewTriangulation *ptr_view)
                                                           source_vertex,
                                                           boost::predecessor_map(boost::make_iterator_property_map(predecessors.begin(), boost::get(boost::vertex_index, graph))).distance_map(boost::make_iterator_property_map(distances.begin(),boost::get(boost::vertex_index, graph))));
 
-                           //print_shortest_paths_all(source_vertex, distances, predecessors, vertex_map); crashes with shibuya file
 
                            bool flag_invalid_path = false;
-                           print_shortest_path_only (flag_invalid_path, source, target_vertex, source_vertex, distances, predecessors, vertex_map, triangulation, ptr_view);
-
-
-                           make_triangulation(flag_invalid_path, target_vertex, source_vertex, distances, predecessors, vertex_map, triangulation, ptr_view);
-
-
-                           //save_to_file_paths ( ptr_view);
+                           f1_5_print_shortest_path_only (flag_invalid_path, source, target_vertex, source_vertex, distances, predecessors, vertex_map, triangulation);
+                           f1_6_make_triangulation(flag_invalid_path, target_vertex, source_vertex, distances, predecessors, vertex_map, triangulation);
                           }
                       }
 
-
-
-void identify_target (CDT::Vertex_handle &source, CDT::Vertex_handle &target, std::pair <Point_2, Point_2> ppt, CDT & triangulation)
+void hs_triangulation::f1_1_identify_target (CDT::Vertex_handle &source, CDT::Vertex_handle &target, std::pair <Point_2, Point_2> ppt, CDT & triangulation)
                        {
-                         qDebug() << "shortestpath::identify_target" ;
+                         qDebug() << "hs_triangulation::f1_1_identify_target" ;
                          for (auto v = triangulation.finite_vertices_begin(); v != triangulation.finite_vertices_end(); ++v)
                              {
                                if (v->point() == ppt.first)
@@ -158,12 +234,9 @@ void identify_target (CDT::Vertex_handle &source, CDT::Vertex_handle &target, st
                               }
                        }
 
-void add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation)
+void hs_triangulation::f1_3_add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation)
                     {
-                        qDebug() << "shortestpath::add_vertices" ;
-
-
-                       //add vertices
+                        qDebug() << " hs_triangulation::f1_3_add_vertices" ;
 
                       std::set<CDT::Vertex_handle> added_vertices;
                       for (CDT::Finite_edges_iterator e = triangulation.finite_edges_begin(); e != triangulation.finite_edges_end(); ++e) // also can use constrained_edges_begin
@@ -176,8 +249,6 @@ void add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & v
                                      if (added_vertices.find(v1) == added_vertices.end()) //not in set
                                         {
                                           added_vertices.insert(v1);
-                                         // Boost_Vertex boost_vertex = boost::add_vertex(graph);
-                                         // vertex_map[v1] = boost_vertex;
                                           vertex_map[v1] = boost::add_vertex(graph);
                                          // qDebug() << "Added point: " << v1->point() ;
                                         }
@@ -189,8 +260,7 @@ void add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & v
                                      if (added_vertices.find(v2) == added_vertices.end())
                                         {
                                          added_vertices.insert(v2);
-                                        // Boost_Vertex boost_vertex = boost::add_vertex(graph);
-                                        // vertex_map[v2] = boost_vertex;
+                                       
                                          vertex_map[v2] = boost::add_vertex(graph);
                                         // qDebug() << "Added point: " << v2->point() ;
                                         }
@@ -202,19 +272,18 @@ void add_vertices (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & v
                           }
                     }
 
-void add_edges (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation)
+void hs_triangulation::f1_4_add_edges (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation)
                   {
-                   qDebug() << "shortestpath::４_add_constrained_edges" ;
+                   qDebug() << "hs_triangulation::f1_4_add_edges" ;
                    std::set<CDT::Edge> added_edges;
 
 
                    for (auto e = triangulation.constrained_edges_begin(); e != triangulation.constrained_edges_end(); ++e)
-                  //for (auto e = triangulation.finite_edges_begin(); e != triangulation.finite_edges_end(); ++e)
                       {
                         CDT::Vertex_handle v1 = e->first->vertex((e->second + 1) % 3);
                         CDT::Vertex_handle v2 = e->first->vertex((e->second + 2) % 3);
 
-                        // Check if this edge has already been added to the set
+                        // Check if this edge has already been added to the se
                         if (added_edges.find(*e) == added_edges.end())
                            {
                               // Add the edge to the set to mark it as added
@@ -232,9 +301,9 @@ void add_edges (Graph & graph, std::map<CDT::Vertex_handle, Boost_Vertex> & vert
                    qDebug() << "added eges count "<< added_edges.size() ;
                    }
 
-void print_shortest_paths_all (Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map)
+void hs_triangulation::f1_5_print_shortest_paths_all (Boost_Vertex & source_vertex, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map)
                                 {
-                                   qDebug() << "shortestpath::print_shortest_paths_all" ;
+                                   qDebug() << "hs_triangulation::f1_5_print_shortest_paths_all" ;
                                    for (auto it = vertex_map.begin(); it != vertex_map.end(); ++it)
                                        {
                                          if (it->first->is_valid())
@@ -264,10 +333,10 @@ void print_shortest_paths_all (Boost_Vertex & source_vertex, std::vector<double>
                                 }
 
 //!!!test if there is any shortest path otherwise endless loop when not in continuous constraints!!
-void print_shortest_path_only (bool & flag_invalid_path, CDT::Vertex_handle & vh_source, Boost_Vertex & bv_target, Boost_Vertex & bv_source, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation, InteractiveViewTriangulation * ptr_view)
+void hs_triangulation::f1_5_print_shortest_path_only (bool & flag_invalid_path, CDT::Vertex_handle & vh_source, Boost_Vertex & bv_target, Boost_Vertex & bv_source, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation)
                                  {
-                                   qDebug() << "shortestpath::print_shortest_path_only" ;
-                                   qDebug() << " ("<< vh_source->point().x() << ", " << vh_source->point().y() << ")"<< " to target: (" << ptr_view->vppt_source_target.second.x() << ", " << ptr_view->vppt_source_target.second.y() << ")\n";
+                                   qDebug() << "hs_triangulation::f1_5_print_shortest_path_only " ;
+                                   qDebug() << " ("<< vh_source->point().x() << ", " << vh_source->point().y() << ")"<< " to target: (" << this->vppt_source_target.second.x() << ", " << this->vppt_source_target.second.y() << ")\n";
                                    Boost_Vertex bv_current = bv_target;
                                    while (bv_current != bv_source)
                                          {
@@ -296,9 +365,9 @@ void print_shortest_path_only (bool & flag_invalid_path, CDT::Vertex_handle & vh
                                    qDebug() << "Make result triangulation: " ;
                                  }
 
-void make_triangulation (bool & flag_invalid_path, Boost_Vertex & bv_target, Boost_Vertex & bv_source, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation, InteractiveViewTriangulation * ptr_view)
+void hs_triangulation::f1_6_make_triangulation (bool & flag_invalid_path, Boost_Vertex & bv_target, Boost_Vertex & bv_source, std::vector<double> & distances, std::vector<Boost_Vertex> & predecessors, std::map<CDT::Vertex_handle, Boost_Vertex> & vertex_map, CDT & triangulation)
       {
-         qDebug() << "shortestpath::make_triangulation" ;
+         qDebug() << "hs_triangulation::f1_6_make_triangulation" ;
 
           if (!flag_invalid_path)
           {
@@ -369,18 +438,18 @@ void make_triangulation (bool & flag_invalid_path, Boost_Vertex & bv_target, Boo
                if (pathTriangulation.finite_vertices_begin()!= pathTriangulation.finite_vertices_end() /*&& bv_target1 == bv_target*/)
                   {
                    qDebug() << " Inserted triangulation for the shortest path." ;
-                   ptr_view->sp.v_source.push_back(ptr_view->vppt_source_target.first);
-                   ptr_view->sp.v_target.push_back(ptr_view->vppt_source_target.second);
-                   ptr_view->sp.bv_source.push_back(bv_source);
-                   ptr_view->sp.bv_target.push_back(bv_target);
-                   ptr_view->sp.v_cdt.push_back(pathTriangulation);
-                   ptr_view->sp.v_predecessors.push_back(predecessors);
-                   ptr_view->sp.v_distances.push_back(distances);
-                  }
-                ptr_view->sp.sp_size();
+                   this->sp.v_source.push_back(this->vppt_source_target.first);
+                   this->sp.v_target.push_back(this->vppt_source_target.second);
+                   this->sp.bv_source.push_back(bv_source);
+                   this->sp.bv_target.push_back(bv_target);
+                   this->sp.v_cdt.push_back(pathTriangulation);
+                   this->sp.v_predecessors.push_back(predecessors);
+                   this->sp.v_distances.push_back(distances);
+                  }      
+                this->sp.sp_size();
 
                qDebug() << " (Distance: " << distances[bv_current] << ")" ;
-               qDebug() << "  paths sp.sp_size() "   << ptr_view->sp.sp_size() ;
+               qDebug() << "  paths sp.sp_size() "   << this->sp.sp_size() ;
              }
 
           }
@@ -388,27 +457,27 @@ void make_triangulation (bool & flag_invalid_path, Boost_Vertex & bv_target, Boo
           else if (flag_invalid_path)
                  {
                   qDebug() << " Recording empty path." ;
-                  ptr_view->sp.v_source.push_back({});
-                  ptr_view->sp.v_target.push_back({});
-                  ptr_view->sp.bv_source.push_back({});
-                  ptr_view->sp.bv_target.push_back({});
-                  ptr_view->sp.v_cdt.push_back({});
-                  ptr_view->sp.v_predecessors.push_back({});
-                  ptr_view->sp.v_distances.push_back({});
+                  this->sp.v_source.push_back({});
+                  this->sp.v_target.push_back({});
+                  this->sp.bv_source.push_back({});
+                  this->sp.bv_target.push_back({});
+                  this->sp.v_cdt.push_back({});
+                  this->sp.v_predecessors.push_back({});
+                  this->sp.v_distances.push_back({});
                  }
               flag_invalid_path = false; // jic it doenst need to be reassigned cause its created each time
       }
 
-void save_to_file_paths (QString path_id, QString path_coord, InteractiveViewTriangulation * ptr_view)
+void hs_triangulation::f1_7_save_to_file_paths (QString path_id, QString path_coord)
                          {
-                           qDebug() << "shortestpath::save_to_file_paths" ;
+                           qDebug() << "hs_triangulation::f1_7_save_to_file_paths" ;
                            std::vector <CDT> v_paths;
                            std::vector <std::vector<size_t>> v_paths_ids;
                            //Print the vertices of the shortest paths
                            qDebug() << "save all shortest paths: ";
 
                            std::size_t count_path = 0;
-                         for (size_t i = 0 ; i < ptr_view->sp.v_cdt.size(); ++i)
+                         for (size_t i = 0 ; i < this->sp.v_cdt.size(); ++i)
                           {
                              qDebug() << "save path number: " << count_path++ ;
                           //for (auto it = vertex_map.begin(); it != vertex_map.end(); ++it)
@@ -422,18 +491,18 @@ void save_to_file_paths (QString path_id, QString path_coord, InteractiveViewTri
                                  qDebug() << "1";
                                  std::vector<Boost_Vertex> path;
                                  //Boost_Vertex current_vertex = target_vertex;
-                                 Boost_Vertex current_vertex = ptr_view->sp.bv_target.at(i);
+                                 Boost_Vertex current_vertex = this->sp.bv_target.at(i);
                                  size_t count_vertices = 0;
 
-                                 while (current_vertex != ptr_view->sp.bv_source.at(i))
+                                 while (current_vertex != this->sp.bv_source.at(i))
                                        {
 
-                                          qDebug() << "current_vertex " <<  current_vertex << " ptr_view->sp.bv_source.at(i)" << ptr_view->sp.bv_source.at(i) ;
+                                          qDebug() << "current_vertex " <<  current_vertex << " ptr_view->sp.bv_source.at(i)" << this->sp.bv_source.at(i) ;
                                          qDebug() << "2";
                                          path.push_back(current_vertex);
 
                                          qDebug() << "2.1";
-                                         for (auto v = ptr_view->sp.v_cdt.at(i).finite_vertices_begin(); v != ptr_view->sp.v_cdt.at(i).finite_vertices_end(); ++v)
+                                         for (auto v = this->sp.v_cdt.at(i).finite_vertices_begin(); v != this->sp.v_cdt.at(i).finite_vertices_end(); ++v)
                                          //for (auto v = ptr_view->sp.v_cdt.back().finite_vertices_begin(); v != ptr_view->sp.v_cdt.back().finite_vertices_end(); ++v)
                                          //for (auto v = triangulation.finite_vertices_begin(); v != triangulation.finite_vertices_end(); ++v)
                                             {
@@ -450,7 +519,7 @@ void save_to_file_paths (QString path_id, QString path_coord, InteractiveViewTri
                                             }
                                           v_paths_ids.back().push_back(current_vertex);
                                           qDebug() << "inserted point" << current_vertex;
-                                          current_vertex = ptr_view->sp.v_predecessors.at(i)[current_vertex];
+                                          current_vertex = this->sp.v_predecessors.at(i)[current_vertex];
                                        }
                                }
 
@@ -461,22 +530,19 @@ void save_to_file_paths (QString path_id, QString path_coord, InteractiveViewTri
                              for (auto & a:v_paths_ids )
                                   qDebug() << "a size "<< a.size();
 
-                           save_paths_coordinates(path_coord, v_paths, ptr_view);
-                           save_paths_indices (path_id, v_paths_ids, ptr_view);
+                
+                           f1_7_1_save_paths_coordinates(path_coord, v_paths);
+                           f1_7_2_save_paths_indices (path_id, v_paths_ids);
                          }
 
-void save_paths_coordinates (QString path_coord, std::vector <CDT> & v_paths, InteractiveViewTriangulation * ptr_view)
+void hs_triangulation::f1_7_1_save_paths_coordinates (QString path_coord, std::vector <CDT> & v_paths)
                            {
-                             qDebug() << "shortestpath::save_paths_coordinates" ;
-
-
-                             qDebug() << "1";
+                             qDebug() << "hs_triangulation::f1_7_1_save_paths_coordinates" ;
 
                              if (path_coord.isEmpty())
                                 {
                                  return; // User canceled the dialog
                                 }
-                             qDebug() << "2";
 
                              std::ofstream outputFile(path_coord.toStdString());
 
@@ -486,8 +552,6 @@ void save_paths_coordinates (QString path_coord, std::vector <CDT> & v_paths, In
                                  qWarning() << "Error opening the output file.";
                                  return;
                                 }
-
-                             qDebug() << "3";
 
                             // outputFile << "PATHS FROM SOURCE [" <<  (std::prev((v_paths.begin())->finite_vertices_end()))->point() << "] TO ALL POINTS : COORDINATES ";
                              size_t count = 0;
@@ -504,9 +568,9 @@ void save_paths_coordinates (QString path_coord, std::vector <CDT> & v_paths, In
                              outputFile.close();
                            }
 
-void save_paths_indices (QString path_id, std::vector <std::vector<size_t>>& v_paths_ids, InteractiveViewTriangulation * ptr_view)
+void hs_triangulation::f1_7_2_save_paths_indices (QString path_id, std::vector <std::vector<size_t>>& v_paths_ids)
                         {
-                          qDebug() << "shortestpath::save_paths_indices" ;
+                          qDebug() << "hs_triangulation::f1_7_2_save_paths_indices";
 
                           if (path_id.isEmpty())
                              {

@@ -1,6 +1,6 @@
 #include <include/mainwindow.h>
 #include <include/interactive_view.h>
-
+#include <include/hs_shortest_path.h>
 
 
 #include <QMenuBar>
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
 
 
-             InteractiveViewTriangulation view (cdt, dt, mainWindow,  &mainWindow);
+             InteractiveView_hs_triangulation view (cdt, dt, mainWindow,  &mainWindow);
 
              QWidget centralWidget (&mainWindow);
 
