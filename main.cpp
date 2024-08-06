@@ -1,6 +1,6 @@
 #include <include/mainwindow.h>
 #include <include/interactive_view.h>
-#include <include/hs_shortest_path.h>
+#include <include/hs_triangulation.h>
 
 
 #include <QMenuBar>
@@ -21,6 +21,14 @@
 #include <string>
 
 
+const char* rs = R"(Welcome to the urban geometry app!
+
+Here you get to test and understand some fundamental algorithms used in urban analysis and how the underlying C++ computer code works!
+
+We're starting with Delaunay Triangulations and Shortest Paths.
+
+HINT: Open your own files! This app accepts files in .geojson and .txt.)";
+
 
 int main(int argc, char *argv[])
         {
@@ -33,10 +41,16 @@ int main(int argc, char *argv[])
             QLocale::setDefault(QLocale(QLocale::Japanese, QLocale::Japan));
             QTextCodec::setCodecForLocale(QTextCodec::codecForName("Shift-JIS"));
 
+            QDir currentDir(QCoreApplication::applicationDirPath());
+            QString iconPath = currentDir.filePath("icon_windows.ico");
+            
+            qDebug() << "icon path" << iconPath;
+
+
             MainWindow mainWindow(nullptr, &app);
             mainWindow.setGeometry(100, 100, 1600, 800);
             mainWindow.setWindowTitle("Urban Geometry");
-            mainWindow.setWindowIcon(QIcon("D:/hsdev/project/GEO_ALG/icon_windows.ico"));
+            mainWindow.setWindowIcon(QIcon(iconPath));
 
             UINT codePage = GetACP();
             // Output the code page
@@ -45,14 +59,9 @@ int main(int argc, char *argv[])
             QTextCodec* codec = QTextCodec::codecForLocale();
             qDebug() << "Current locale encoding: " << codec->name();
 
-            qDebug() << "2 ";
-
              // Create a Delaunay triangulation
              Delaunay dt;
-             dt.clear();
-
              CDT cdt;
-
 
 
              InteractiveView_hs_triangulation view (cdt, dt, mainWindow,  &mainWindow);
@@ -83,20 +92,14 @@ int main(int argc, char *argv[])
 
 
 
-const char* rs = R"(Welcome to the urban geometry app!
 
-Here you get to test and understand some fundamental algorithms used in urban analysis and how the underlying C++ computer code works!
 
-We're starting with Delaunay Triangulations and Shortest Paths.
+            QString  s = rs;
+            QMessageBox::information(nullptr, "Welcome!", rs);
 
-HINT: Open your own files! This app accepts files in .geojson and .txt.)";
+            QMessageBox::information(nullptr, "Colaborate!", "This is an open project, so any problems, comments or sugestions, please send them through the direct help email above!");
 
- QString  s = rs;
-  QMessageBox::information(nullptr, "Welcome!", rs);
-
-  QMessageBox::information(nullptr, "Colaborate!", "This is an open project, so any problems, comments or sugestions, please send them through the direct help email above!");
-
-  QMessageBox::information(nullptr, "Delaunay Triangulation", mainWindow.ptr_iv->message_qs_DT_start);
+            QMessageBox::information(nullptr, "Delaunay Triangulation", mainWindow.ptr_iv->message_qs_DT_start);
 
             return app.exec();
         }

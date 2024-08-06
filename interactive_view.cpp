@@ -1,5 +1,5 @@
 #include <include/interactive_view.h>
-#include <include/hs_shortest_path.h>
+#include <include/hs_triangulation.h>
 
 // trying to do a  general approach that will allow me to adapt for CDT also
 // seems to work but have to insert constrained edge to source and target points otherwise they are not considered
@@ -44,6 +44,8 @@ InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, De
                                 this->message_qs_open = message_open;
 
                                 this->message_qs_DT_start = message_r_DT_start;
+
+                                this->scale(0.001, 0.001);
 
                                 qDebug() << "InteractiveView_hs_triangulation::InteractiveView_hs_triangulation exit";
    
@@ -117,7 +119,8 @@ void InteractiveView_hs_triangulation::wheelEvent (QWheelEvent *event)
 
            qDebug() << "scaleFactor"<< scaleFactor;
            //zoom(scaleFactor);
-           scale (scaleFactor, scaleFactor);
+
+           this->scale (scaleFactor, scaleFactor);
 
                event->accept();
            } else {
@@ -197,8 +200,9 @@ void InteractiveView_hs_triangulation::clear_graphicitems ()
                                     //qDebug() << "1 ";
                                     for (auto &item : hst->triangulationItems)
                                         {
-                                          this->ref_mainwindow.scene_.removeItem(item);
-                                          delete item;
+                                          this->ref_mainwindow.scene_.removeItem(item.get());
+                                          //delete item;
+                                          item = nullptr;
                                         }
                                     //qDebug() << "1.1 ";
                                     if (!hst->triangulationItems.empty())
@@ -216,9 +220,10 @@ void InteractiveView_hs_triangulation::clear_graphicitems ()
 
                                     //qDebug() << "3 ";
                                     if(hst->ctriangulationItem!=nullptr)
-                                    this->ref_mainwindow.scene_.removeItem(hst->ctriangulationItem);
+                                    this->ref_mainwindow.scene_.removeItem(hst->ctriangulationItem.get());
                                     //qDebug() << "3.1 ";
-                                    delete hst->ctriangulationItem;
+                                    //delete hst->ctriangulationItem; // std::shared_ptr <CGAL::Qt::CTriangulationGraphicsItem<CDT>>
+                                    hst->ctriangulationItem = nullptr;
 
 
                                      if(hst->sp.elipse_source!=nullptr && hst->sp.elipse_target!=nullptr )
@@ -252,18 +257,19 @@ void InteractiveView_hs_triangulation::clear_graphicitems ()
                                         hst->ctextItems.clear();
 
                                     //qDebug() << "5 ";
-                                    this->ref_mainwindow.scene_.removeItem(hst->voronoiItem);
+                                    this->ref_mainwindow.scene_.removeItem(hst->voronoiItem.get());
 
                                     //qDebug() << "5.1 ";
-                                    delete hst->voronoiItem;
+                                   // delete
+                                    hst->voronoiItem = nullptr;
                                    }
 void InteractiveView_hs_triangulation::create_graphicitems ()
                                    {
                                     qDebug() << "InteractiveView_hs_triangulation::create_graphicitems"<< scalefactor ;
-                                    hst->triangulationItems.push_back(new CGAL::Qt::TriangulationGraphicsItem<Delaunay> (&this->hst->dt_, false));
+                                    hst->triangulationItems.push_back(std::make_shared <CGAL::Qt::TriangulationGraphicsItem<Delaunay>> (this->hst->dt_.get(), false));
                                     hst->triangulationItems.back()->setZValue(0.1);
 
-                                    hst->ctriangulationItem = new CGAL::Qt::CTriangulationGraphicsItem<CDT> (&this->hst->cdt_, true);
+                                    hst->ctriangulationItem = std::make_shared < CGAL::Qt::CTriangulationGraphicsItem<CDT>> (this->hst->cdt_.get(), true);
                                     hst->ctriangulationItem->setZValue(0.5);
 
                                     if (this->hst->sp.sp_size())
@@ -273,7 +279,7 @@ void InteractiveView_hs_triangulation::create_graphicitems ()
                                             hst->sp.v_cdt_gi.back()->setZValue(1);
                                         }
 
-                                    hst->voronoiItem = new CGAL::Qt::VoronoiGraphicsItem<Delaunay> (&this->hst->dt_);
+                                    hst->voronoiItem = std::make_shared <CGAL::Qt::VoronoiGraphicsItem<Delaunay>> (this->hst->dt_.get());
                                    }
 void InteractiveView_hs_triangulation::scene_add_graphicitems ()
                                    {
@@ -282,13 +288,13 @@ void InteractiveView_hs_triangulation::scene_add_graphicitems ()
                                     if (this->flag_triangulation)
                                        {
                                         if(!hst->triangulationItems.empty())
-                                          ref_mainwindow.scene_.addItem(hst->triangulationItems.back());
+                                          ref_mainwindow.scene_.addItem(hst->triangulationItems.back().get());
                                           qDebug() << "added delaunay ";
                                        }
 
                                     if (this->flag_ctriangulation)
                                        {
-                                         ref_mainwindow.scene_.addItem(hst->ctriangulationItem);
+                                         ref_mainwindow.scene_.addItem(hst->ctriangulationItem.get());
                                          qDebug() << "added cdelaunay ";
                                        }
 
@@ -315,7 +321,7 @@ void InteractiveView_hs_triangulation::scene_add_graphicitems ()
 
                                     if (this->flag_voronoi)
                                        {
-                                         ref_mainwindow.scene_.addItem(hst->voronoiItem);
+                                         ref_mainwindow.scene_.addItem(hst->voronoiItem.get());
                                          qDebug() << "added voronoi ";
                                        }
 
@@ -333,7 +339,7 @@ void InteractiveView_hs_triangulation::set_textitems_dt ()
                                       QFont font("Helvetica", fontSize);
                                       font.setPointSizeF(font.pointSizeF() /* /scalefactor */);
 
-                                      for (auto it = this->hst->dt_.finite_vertices_begin(); it != hst->dt_.finite_vertices_end(); ++it)
+                                      for (auto it = this->hst->dt_->finite_vertices_begin(); it != hst->dt_->finite_vertices_end(); ++it)
                                           {
                                             // qDebug() << "Point: " << it->point() ;
 
@@ -358,7 +364,7 @@ void InteractiveView_hs_triangulation::set_textitems_ct ()
                                       font.setPointSizeF(font.pointSizeF() /* / scalefactor*/);
 
                                       size_t count = 0;
-                                      for (auto it = hst->cdt_.finite_vertices_begin(); it != hst->cdt_.finite_vertices_end(); ++it, ++count)
+                                      for (auto it = hst->cdt_->finite_vertices_begin(); it != hst->cdt_->finite_vertices_end(); ++it, ++count)
                                           {
                                             //qDebug() << "Point: " << it->point() ;
                                             QString text = QString::fromStdString(std::to_string(count));
@@ -459,8 +465,7 @@ void InteractiveView_hs_triangulation::setpens ()
                                        hst->sp.elipse_source->setPen(verticepen_sp);
                                        hst->sp.elipse_target->setPen(verticepen_sp);
                                        }
-                                   
-
+                                  
                          
                                     //VORONOI
                                     QPen vedgespen(Qt::cyan);
@@ -477,11 +482,6 @@ void InteractiveView_hs_triangulation::setpens ()
                                   }
 
 
-
-
-
-
-
 void InteractiveView_hs_triangulation::f1_1_source_target_shortestpath(Point_2 pt)
 {
     qDebug() << "InteractiveView_hs_triangulation::f1_1_source_target_shortestpath";
@@ -494,7 +494,7 @@ void InteractiveView_hs_triangulation::f1_1_source_target_shortestpath(Point_2 p
     {
         hst->flag_input_st = 0;
         hst->vppt_source_target.second = pt; // Replace with your source point
-        hst->f1_shortest_path(this->hst->cdt_, this);
+        hst->f1_shortest_path(*this->hst->cdt_, this);
 
         if (this->hst->sp.sp_size())
             this->pathindex = this->hst->sp.v_cdt.size() - 1;//cannot refer to v_cdt_gi because latest gi was not created yet
@@ -504,18 +504,14 @@ void InteractiveView_hs_triangulation::f1_1_source_target_shortestpath(Point_2 p
     }
 }
 
-
-
 void InteractiveView_hs_triangulation::save_to_file_paths(QString filePath_ids, QString filePath_coord)
     {
-
         qDebug() << "InteractiveView_hs_triangulation::save_to_file_paths";
         this->hst->f1_7_save_to_file_paths(filePath_ids, filePath_coord);
     }
 
 
 /// LOG
-
 //size_t position_insert = literal.find("ese: ");
 size_t countlines = 0;
 size_t count_updates = 0;
@@ -569,7 +565,7 @@ QGraphicsTextItem*
 double InteractiveView_hs_triangulation::scale_factor ()
                                                   {
                                                     qDebug() << "InteractiveView_hs_triangulation::scale_factor" ;
-                                                    CGAL::Bbox_2 bb = CGAL::bbox_2(hst->dt_.points_begin(), hst->dt_.points_end());
+                                                    CGAL::Bbox_2 bb = CGAL::bbox_2(hst->dt_->points_begin(), hst->dt_->points_end());
 
                                                     double bounding_box_width = bb.xmax() - bb.xmin();
                                                     double bounding_box_height = bb.ymax() - bb.ymin();

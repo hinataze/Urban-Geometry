@@ -107,8 +107,7 @@ class InteractiveView_hs_triangulation : public QGraphicsView
                                        void setpens ();
                                        void update_log();
 
-                                       CGAL::Qt::GraphicsViewNavigation navigation;
-                                     
+                                       CGAL::Qt::GraphicsViewNavigation navigation;       
                                     
                                       void shortest_path();
                                       void save_paths_coordinates (std::vector <CDT> & v_paths);

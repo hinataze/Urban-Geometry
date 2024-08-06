@@ -47,7 +47,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="hs_shortest_path.cpp">
+    <ClCompile Include="hs_triangulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="interactive_view.cpp">
@@ -70,7 +70,7 @@
     <ClInclude Include="include\HS_TriangulationGraphicsItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\hs_shortest_path.h">
+    <ClInclude Include="include\hs_triangulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <QtMoc Include="include\interactive_view.h">
@@ -97,10 +97,10 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <QtRcc Include="..\AB_231114\icon.qrc">
+    <QtRcc Include="icon.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
-    <None Include="..\AB_231114\icon_windows.ico">
+    <None Include="icon_windows.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

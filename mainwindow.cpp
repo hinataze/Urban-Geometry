@@ -1,6 +1,6 @@
 #include <include/mainwindow.h>
 #include <include/interactive_view.h>
-#include <include/hs_shortest_path.h>
+#include <include/hs_triangulation.h>
 
 #include <QDesktopServices>
 
@@ -18,16 +18,16 @@ MainWindow::MainWindow(QWidget *parent, QApplication *app) : QMainWindow(parent)
 
               // Create a menu bar
               this->menu_bar = menuBar();
-               this->menuBar()->setContextMenuPolicy(Qt::PreventContextMenu);
+              this->menuBar()->setContextMenuPolicy(Qt::PreventContextMenu);
 
-              //file
+             //file
              this->menu_file = menu_bar->addMenu(QStringLiteral("File"));
              this->openAction = menu_file->addAction(QStringLiteral("Open"));
              this->saveAction = menu_file->addAction(QStringLiteral("Save"));
              this-> exitAction = menu_file->addAction(QStringLiteral("Exit"));
-              QObject::connect(openAction, &QAction::triggered ,app, [&]() {this->openFile(false);});
-              QObject::connect(saveAction, &QAction::triggered, app, [&]() {this->save_files();});
-              QObject::connect(exitAction, &QAction::triggered, app, &QApplication::quit);
+             QObject::connect(openAction, &QAction::triggered ,app, [&]() {this->openFile(false);});
+             QObject::connect(saveAction, &QAction::triggered, app, [&]() {this->save_files();});
+             QObject::connect(exitAction, &QAction::triggered, app, &QApplication::quit);
 
               //mode
              this->menu_mode = menu_bar->addMenu(QStringLiteral("Mode"));
@@ -38,11 +38,11 @@ MainWindow::MainWindow(QWidget *parent, QApplication *app) : QMainWindow(parent)
 
 
               //view
-            this->menu_view = menu_bar->addMenu(QStringLiteral("View"));
-              QAction* fitviewAction = menu_view->addAction("Fit View");
-              QObject::connect(fitviewAction, &QAction::triggered, app, [&]() {this->fit_view();});
+             this->menu_view = menu_bar->addMenu(QStringLiteral("View"));
+             QAction* fitviewAction = menu_view->addAction("Fit View");
+             QObject::connect(fitviewAction, &QAction::triggered, app, [&]() {this->fit_view();});
              this->view_voronoi_action = menu_view->addAction("Voronoi");
-              QObject::connect(view_voronoi_action, &QAction::triggered, app, [&]() {this->turn_flag_view(this->ptr_iv->flag_voronoi);});
+             QObject::connect(view_voronoi_action, &QAction::triggered, app, [&]() {this->turn_flag_view(this->ptr_iv->flag_voronoi);});
 
               
 
@@ -94,35 +94,35 @@ void MainWindow::turn_flag_view(bool& flag)
 
 
     //TRIANGULATION
-    if (ptr_iv->hst->dt_.vertices_begin() != ptr_iv->hst->dt_.vertices_end())
+    if (ptr_iv->hst->dt_->vertices_begin() != ptr_iv->hst->dt_->vertices_end())
     {
         if (this->ptr_iv->flag_triangulation)
         {
-            this->scene_.addItem(this->ptr_iv->hst->triangulationItems.back());
+            this->scene_.addItem(this->ptr_iv->hst->triangulationItems.back().get());
             for (auto item : ptr_iv->hst->textItems)
                 this->scene_.addItem(item);
         }
         else if (!this->ptr_iv->flag_triangulation)
         {
             for (auto item : ptr_iv->hst->triangulationItems)
-                this->scene_.removeItem(item);
+                this->scene_.removeItem(item.get());
 
             for (auto item : ptr_iv->hst->textItems)
                 this->scene_.removeItem(item);
         }
 
         //CONSTRAINED
-        if (ptr_iv->hst->cdt_.vertices_begin() != ptr_iv->hst->cdt_.vertices_end())
+        if (ptr_iv->hst->cdt_->vertices_begin() != ptr_iv->hst->cdt_->vertices_end())
         {
             if (this->ptr_iv->flag_ctriangulation)
             {
-                this->scene_.addItem(ptr_iv->hst->ctriangulationItem);
+                this->scene_.addItem(ptr_iv->hst->ctriangulationItem.get());
                 for (auto item : ptr_iv->hst->ctextItems)
                     this->scene_.addItem(item);
             }
             else if (!this->ptr_iv->flag_ctriangulation)
             {
-                this->scene_.removeItem(ptr_iv->hst->ctriangulationItem);
+                this->scene_.removeItem(ptr_iv->hst->ctriangulationItem.get());
 
                 for (auto item : ptr_iv->hst->ctextItems)
                     this->scene_.removeItem(item);
@@ -155,9 +155,9 @@ void MainWindow::turn_flag_view(bool& flag)
 
         //VORONOI
         if (this->ptr_iv->flag_voronoi)
-            this->scene_.addItem(this->ptr_iv->hst->voronoiItem);
+            this->scene_.addItem(this->ptr_iv->hst->voronoiItem.get());
         else if (!this->ptr_iv->flag_voronoi)
-            this->scene_.removeItem(this->ptr_iv->hst->voronoiItem);
+            this->scene_.removeItem(this->ptr_iv->hst->voronoiItem.get());
     }
 
     if (&flag != &this->ptr_iv->flag_voronoi) // inside sync_flag_sets we toggle textview for dt
@@ -181,7 +181,7 @@ void MainWindow::view_refresh()
 void MainWindow::fit_view()
 {
     qDebug() << "MainWindow::fit_view ";
-    this->ptr_iv->fitInView(this->ptr_iv->hst->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
+    this->ptr_iv->fitInView(this->ptr_iv->hst->triangulationItems.back().get(), Qt::KeepAspectRatio); //the last scale to view is the on
 }
 void MainWindow::openEmailClient()
 {
@@ -264,9 +264,7 @@ void MainWindow::openFile (bool flag_start)
                           map_id_links = openfile_GeoJson(filePath_edges);
                           this->openfile_insertpoints_gjson(map_id_nodes);
                           this->openfile_insertedges_gjson(map_id_links, map_id_nodes);
-                          qDebug() << " now 1 " << ptr_iv;
                       }
-                      qDebug() << " now 2 " << ptr_iv ;
                   }
 
                   qDebug() << " now 3 " << ptr_iv;
@@ -274,7 +272,7 @@ void MainWindow::openFile (bool flag_start)
                   {
                       qDebug() << " ptr_iv != nullptr "  << ptr_iv;
                       this->view_refresh();
-                      this->ptr_iv->fitInView(this->ptr_iv->hst->triangulationItems.back(), Qt::KeepAspectRatio); //the last scale to view is the on
+                      this->ptr_iv->fitInView(this->ptr_iv->hst->triangulationItems.back().get(), Qt::KeepAspectRatio); //the last scale to view is the on
                   }
 
                   qDebug() << "MainWindow::openFile exit " ;
@@ -384,32 +382,32 @@ std::vector <std::pair <double, double>> MainWindow::openfile_txt  (QString path
 void MainWindow::openfile_insertpoints_txt (std::vector <std::pair <double, double>> &vpts)
                 {
                   qDebug()<< "MainWindow::openfile_insertpoints_txt";
-                   ptr_iv->hst->dt_.clear();
+                   ptr_iv->hst->dt_->clear();
                    for (auto & a : vpts)
                        {
-                           ptr_iv->hst->dt_.insert (Point_2 (a.first, a.second));
-                           ptr_iv->hst->cdt_.insert (Point_2 (a.first, a.second));
+                           ptr_iv->hst->dt_->insert (Point_2 (a.first, a.second));
+                           ptr_iv->hst->cdt_->insert (Point_2 (a.first, a.second));
                        }
                 }
 void MainWindow::openfile_insertpoints_gjson (std::map <QString, std::pair <QString, QString>>  &vpts)
                 {
                   qDebug()<< "MainWindow::openfile_insertpoints_gjson";
-                   ptr_iv->hst->dt_.clear();
+                   ptr_iv->hst->dt_->clear();
                    for (auto & a : vpts)
                        {
-                          ptr_iv->hst->dt_.insert (Point_2 (a.second.first.toDouble(), a.second.second.toDouble()));
-                          ptr_iv->hst->cdt_.insert (Point_2(a.second.first.toDouble(), a.second.second.toDouble()));
+                          ptr_iv->hst->dt_->insert (Point_2 (a.second.first.toDouble(), a.second.second.toDouble()));
+                          ptr_iv->hst->cdt_->insert (Point_2(a.second.first.toDouble(), a.second.second.toDouble()));
                          // qDebug() << Point_2 (a.second.first.toDouble(), a.second.second.toDouble()) ;
                           //qDebug() << Point_2 (a.second.first.toDouble(), a.second.second.toDouble()) ;
                        }
                    int numberOfPoints = 0;
-                      for (auto v =  ptr_iv->hst->dt_.finite_vertices_begin(); v !=  ptr_iv->hst->dt_.finite_vertices_end(); ++v)
+                      for (auto v =  ptr_iv->hst->dt_->finite_vertices_begin(); v !=  ptr_iv->hst->dt_->finite_vertices_end(); ++v)
                       {
                           numberOfPoints++;
                       }
 
                       int numberOfPointscdt = 0;
-                         for (auto v =  ptr_iv->hst->cdt_.finite_vertices_begin(); v !=  ptr_iv->hst->cdt_.finite_vertices_end(); ++v)
+                         for (auto v =  ptr_iv->hst->cdt_->finite_vertices_begin(); v !=  ptr_iv->hst->cdt_->finite_vertices_end(); ++v)
                          {
                              numberOfPointscdt++;
                          }
@@ -421,7 +419,7 @@ void MainWindow::openfile_insertpoints_gjson (std::map <QString, std::pair <QStr
 void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, double>> &vegs, std::vector <std::pair <double, double>> &vpts)
                  {
                   qDebug()<< "MainWindow::openfile_insertedges_txt";
-                  ptr_iv->hst->cdt_.clear();
+                  ptr_iv->hst->cdt_->clear();
 
                   for (auto & a : vegs)
                       {
@@ -435,7 +433,7 @@ void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, doubl
 
                        try
                          {
-                           ptr_iv->hst->cdt_.insert_constraint (point_source, point_target);
+                           ptr_iv->hst->cdt_->insert_constraint (point_source, point_target);
                          }
                          catch (const std::exception& e)
                                {
@@ -443,12 +441,12 @@ void MainWindow::openfile_insertedges_txt (std::vector <std::pair <double, doubl
                                // break;
                                }
                        }
-                  qDebug() << "is valid? " << ptr_iv->hst->cdt_.is_valid() ;
+                  qDebug() << "is valid? " << ptr_iv->hst->cdt_->is_valid() ;
                  }
 void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QString, QString>> &vegs, std::map <QString, std::pair <QString, QString>>  &vpts)
                  {
                   qDebug()<< "MainWindow::openfile_insertedges_geojson";
-                  ptr_iv->hst->cdt_.clear();
+                  ptr_iv->hst->cdt_->clear();
 
                   qDebug() <<"nodes to insert: "<< vegs.size() << ", links to insert: " <<vpts.size() ;
 
@@ -465,7 +463,7 @@ void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QStri
 
                        try
                          {
-                           ptr_iv->hst->cdt_.insert_constraint (point_source, point_target);
+                           ptr_iv->hst->cdt_->insert_constraint (point_source, point_target);
                          }
                          catch (const std::exception& e)
                                {
@@ -473,7 +471,7 @@ void MainWindow::openfile_insertedges_gjson (std::map <QString, std::pair <QStri
                                 //break;
                                }
                        }
-                  qDebug() << "is valid? " << ptr_iv->hst->cdt_.is_valid() ;
+                  qDebug() << "is valid? " << ptr_iv->hst->cdt_->is_valid() ;
                  }
 bool MainWindow::isGeoJson(const QString filePath)
 {
@@ -533,7 +531,7 @@ void MainWindow::save_files()
                       return;
                      }
 
-                  for (Delaunay::Finite_vertices_iterator it = ptr_iv->hst->dt_.finite_vertices_begin(); it != ptr_iv->hst->dt_.finite_vertices_end(); ++it)
+                  for (Delaunay::Finite_vertices_iterator it = ptr_iv->hst->dt_->finite_vertices_begin(); it != ptr_iv->hst->dt_->finite_vertices_end(); ++it)
                      {
                       Point_2 p = it->point();
                       outputFile << p.x() << " " << p.y() << "\n";
@@ -562,7 +560,7 @@ void MainWindow::save_files()
                          }
 
 
-                      for (auto it_v = ptr_iv->hst->cdt_.finite_vertices_begin(); it_v != ptr_iv->hst->cdt_.finite_vertices_end(); ++it_v)
+                      for (auto it_v = ptr_iv->hst->cdt_->finite_vertices_begin(); it_v != ptr_iv->hst->cdt_->finite_vertices_end(); ++it_v)
                           {
                           outputFile_v << it_v->point().x() << " " << it_v->point().y() <<"\n" ;
                           }
@@ -588,9 +586,9 @@ void MainWindow::save_files()
                           }
 
 
-                      for (auto e = ptr_iv->hst->cdt_.finite_edges_begin(); e != ptr_iv->hst->cdt_.finite_edges_end(); ++e)
+                      for (auto e = ptr_iv->hst->cdt_->finite_edges_begin(); e != ptr_iv->hst->cdt_->finite_edges_end(); ++e)
                           {
-                            if (ptr_iv->hst->cdt_.is_constrained(*e))
+                            if (ptr_iv->hst->cdt_->is_constrained(*e))
                                {
                                  for (int i = 1; i <= 2; ++i)
                                      {
@@ -599,7 +597,7 @@ void MainWindow::save_files()
                                        //outputFile << vertex_point << " " ;
 
                                        size_t count_vertex_index = 0;
-                                       for (auto vert = ptr_iv->hst->cdt_.finite_vertices_begin(); vert != ptr_iv->hst->cdt_.finite_vertices_end(); ++vert)
+                                       for (auto vert = ptr_iv->hst->cdt_->finite_vertices_begin(); vert != ptr_iv->hst->cdt_->finite_vertices_end(); ++vert)
                                            {
                                             if (vert->point() == v->point())
                                                {

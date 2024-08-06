@@ -47,28 +47,30 @@ struct shortestpath;
 
 class hs_triangulation
 {
-  friend class InteractiveView_hs_triangulation;
+   friend class InteractiveView_hs_triangulation;
 
    public:
-   hs_triangulation(CDT& cdt, Delaunay& dt) : cdt_(cdt), dt_(dt) {}
-
-
-  
+   hs_triangulation ();
+   hs_triangulation (CDT& cdt, Delaunay& dt) 
+                    {
+                      dt_  = std::make_shared <Delaunay> (dt); 
+                      cdt_ = std::make_shared <CDT> (cdt);
+                    }
 
    size_t flag_input_st = 0;
    
    std::pair <Point_2, Point_2> vppt_source_target;
    
-   Delaunay& dt_;
-   CDT& cdt_;
+   std::shared_ptr <Delaunay> dt_;
+   std::shared_ptr <CDT> cdt_;
    
-   std::vector<CGAL::Qt::TriangulationGraphicsItem<Delaunay>*> triangulationItems = { nullptr }; // dt 
-   CGAL::Qt::CTriangulationGraphicsItem<CDT>* ctriangulationItem = nullptr;  // cdt
-   
+   std::vector <std::shared_ptr <CGAL::Qt::TriangulationGraphicsItem<Delaunay>>> triangulationItems = { nullptr }; // dt 
+   std::shared_ptr <CGAL::Qt::VoronoiGraphicsItem<Delaunay>> voronoiItem = nullptr;// = std::make_shared<CGAL::Qt::VoronoiGraphicsItem<Delaunay>>(); // dt only
+
+   std::shared_ptr <CGAL::Qt::CTriangulationGraphicsItem<CDT>> ctriangulationItem = nullptr;  // cdt
+
    std::vector <QGraphicsTextItem*> textItems; // dt 
    std::vector <QGraphicsTextItem*> ctextItems; // cdt
-   
-   CGAL::Qt::VoronoiGraphicsItem<Delaunay>* voronoiItem = nullptr; // dt only
    
    
    struct shortestpath {
@@ -101,7 +103,6 @@ class hs_triangulation
     } sp;
 
 
-
   void insertpoint(QPointF);
 
   void deletepoint(QPoint, InteractiveView_hs_triangulation*);
@@ -119,7 +120,6 @@ class hs_triangulation
   void f1_7_save_to_file_paths(QString, QString);
   void f1_7_1_save_paths_coordinates(QString path_coord, std::vector <CDT>& v_paths);
   void f1_7_2_save_paths_indices(QString, std::vector <std::vector<size_t>>& v_paths_ids);
-
 };
 
 

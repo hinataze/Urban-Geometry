@@ -1,10 +1,54 @@
-#include <include/hs_shortest_path.h>
-
-
+#include <include/hs_triangulation.h>
 
 
 
 typedef K::FT FT;
+
+
+
+ hs_triangulation::hs_triangulation()
+{
+  // qDebug() << "hs_triangulation::hs_triangulation";
+  //
+  // triangulationItems = { std::make_shared <CGAL::Qt::TriangulationGraphicsItem<Delaunay>> (this->dt_.get(), false)}; // dt 
+  //
+  // voronoiItem = std::make_shared<CGAL::Qt::VoronoiGraphicsItem<Delaunay>>(this->dt_.get());
+  //
+  // ctriangulationItem = std::make_shared <CGAL::Qt::CTriangulationGraphicsItem<CDT>>(this->cdt_.get(), true);   // cdt
+
+
+
+    qDebug() << "hs_triangulation::hs_triangulation";
+    try {
+            // Initialize triangulationItems with error handling
+            triangulationItems = { std::make_shared<CGAL::Qt::TriangulationGraphicsItem<Delaunay>>(this->dt_.get(), false) };
+            if (!triangulationItems[0]) {
+                throw std::runtime_error("Failed to initialize TriangulationGraphicsItem");
+            }
+        
+            // Initialize voronoiItem with error handling
+            voronoiItem = std::make_shared<CGAL::Qt::VoronoiGraphicsItem<Delaunay>>(this->dt_.get());
+            if (!voronoiItem) {
+                throw std::runtime_error("Failed to initialize VoronoiGraphicsItem");
+            }
+        
+            // Initialize ctriangulationItem with error handling
+            ctriangulationItem = std::make_shared<CGAL::Qt::CTriangulationGraphicsItem<CDT>>(this->cdt_.get(), true);
+            if (!ctriangulationItem) {
+                throw std::runtime_error("Failed to initialize CTriangulationGraphicsItem");
+            }
+        
+         }
+         catch (const std::exception& e) {
+             qCritical() << "Error in hs_triangulation constructor:" << e.what();
+             // Handle the error as needed, for example:
+             // - Set the object to a safe state
+             // - Exit the constructor
+             // - Propagate the exception further up
+             // Here we simply exit the constructor
+             throw;  // Optionally rethrow the exception if you want it to propagate further
+         }
+}
 
 
 void hs_triangulation::insertpoint (QPointF pos)
@@ -15,7 +59,7 @@ void hs_triangulation::insertpoint (QPointF pos)
     double x = CGAL::to_double(pos.x());
     double y = CGAL::to_double(pos.y());
     
-    this->dt_.insert(Point_2(x, y)); //activate if i want to edit the triangulation
+    this->dt_->insert(Point_2(x, y)); //activate if i want to edit the triangulation
 }
 
 
@@ -32,9 +76,9 @@ void hs_triangulation::deletepoint (QPoint mousePoint, InteractiveView_hs_triang
     Point_2 queryPoint(scenePoint.x(), scenePoint.y());
 
     Delaunay::Vertex_handle closestVertex = nullptr;
-    if (this->dt_.finite_vertices_begin() != this->dt_.finite_vertices_end())
+    if (this->dt_->finite_vertices_begin() != this->dt_->finite_vertices_end())
     {
-        this->f1_2_find_nearest_point(closestVertex, queryPoint, this->dt_);
+        this->f1_2_find_nearest_point(closestVertex, queryPoint, *this->dt_);
     }
     else
     {
@@ -46,14 +90,14 @@ void hs_triangulation::deletepoint (QPoint mousePoint, InteractiveView_hs_triang
         qDebug() << "delete vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y();
         auto point = closestVertex->point();
         Triangulation dt_copy;
-        for (auto vertex = this->dt_.finite_vertices_begin(); vertex != this->dt_.finite_vertices_end(); ++vertex)
+        for (auto vertex = this->dt_->finite_vertices_begin(); vertex != this->dt_->finite_vertices_end(); ++vertex)
         {
             if (vertex->point() != point)
             {
                 dt_copy.insert(vertex->point());
             }
         }
-        this->dt_ = dt_copy;
+        *this->dt_ = dt_copy;
         qDebug() << "vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y() << "deleted";
         qDebug() << "vertex x" << point.x() << " y " << point.y() << "deleted!!";
     }
@@ -70,9 +114,9 @@ void  hs_triangulation::f1_define_source_target (QPoint mousePoint, InteractiveV
     // Find the closest vertex to the clicked point.
     Point_2 queryPoint(scenePoint.x(), scenePoint.y());
     CDT::Vertex_handle  closestVertex = nullptr;
-    if (this->cdt_.finite_vertices_begin() != this->cdt_.finite_vertices_end())
+    if (this->cdt_->finite_vertices_begin() != this->cdt_->finite_vertices_end())
     {
-        f1_2_find_nearest_point(closestVertex, queryPoint, this->cdt_);
+        f1_2_find_nearest_point(closestVertex, queryPoint, *this->cdt_);
     }
     else
     {
