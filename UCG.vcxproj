@@ -85,8 +85,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;NDEBUG;QT_NO_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
-      <ProgramDataBaseFileName>
-      </ProgramDataBaseFileName>
+      <ProgramDataBaseFileName></ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
@@ -207,10 +206,11 @@
     <ClCompile Include="mainwindow.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hs_execution_log.h" />
     <ClInclude Include="include\HS_CTriangulationGraphicsItem.h" />
     <ClInclude Include="include\HS_Delaunay_triangulation_2.h" />
     <ClInclude Include="include\HS_TriangulationGraphicsItem.h" />
+    <ClInclude Include="include\HS_Triangulation_2.h" />
+    <ClInclude Include="include\hs_execution_log.h" />
     <ClInclude Include="include\hs_triangulation.h" />
     <QtMoc Include="include\interactive_view.h" />
     <QtMoc Include="include\mainwindow.h" />

@@ -35,7 +35,7 @@
 
 #include <QDebug>
 
-#include <hs_execution_log.h>
+#include <include/hs_execution_log.h>
 
 
 namespace CGAL {

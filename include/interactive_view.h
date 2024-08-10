@@ -6,7 +6,7 @@
 #define INTERACTIVE_VIEW_H
 
 #include <include/mainwindow.h>
-#include <hs_execution_log.h>
+#include <include/hs_execution_log.h>
 
 #include <boost/graph/adjacency_list.hpp>
 
@@ -15,6 +15,7 @@
 #include <include/HS_Delaunay_triangulation_2.h>
 #include <include/HS_TriangulationGraphicsItem.h>
 #include <include/HS_CTriangulationGraphicsItem.h>
+#include <include/hs_execution_log.h>
 
 //SHORTEST PATH
 

@@ -13,6 +13,7 @@ CONFIG += c++17
 # DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    hs_execution_log.cpp \
     hs_triangulation.cpp \
     interactive_view.cpp \
     main.cpp \
@@ -23,7 +24,8 @@ HEADERS += \
     include/HS_Delaunay_triangulation_2.h \
     include/HS_TriangulationGraphicsItem.h \
     include/HS_Triangulation_2.h \
-    include/hs_triangulation.h \
+    include/hs_triangulation.h \ 
+    include/hs_execution_log.h \
     include/interactive_view.h \
     include/mainwindow.h
 

@@ -47,6 +47,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="hs_execution_log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="hs_triangulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -57,9 +60,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mainwindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="hs_execution_log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -73,6 +73,12 @@
     <ClInclude Include="include\HS_TriangulationGraphicsItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\HS_Triangulation_2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hs_execution_log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\hs_triangulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -82,9 +88,6 @@
     <QtMoc Include="include\mainwindow.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <ClInclude Include="hs_execution_log.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
