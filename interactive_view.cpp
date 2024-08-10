@@ -25,7 +25,7 @@ InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, De
 
                                 QFont font2("Helvetica", 10 );
                                 textEditL.setFont(font2);
-                                textEditL.setPlainText("Code will be shown here.");
+                                textEditL.setHtml("Code will be shown here.");
                                 textEditL.setMinimumHeight(150);
                                 
                                 textEditL.setReadOnly(false); // Allow editing
@@ -33,7 +33,7 @@ InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, De
 
                                 QFont font3("Helvetica", 10 );
                                 textEditR.setFont(font3);
-                                textEditR.setPlainText("Explanations will be shown here.");
+                                textEditR.setHtml("Explanations will be shown here.");
                                 textEditR.setFixedHeight(150);
 
                                 ref_mainwindow.openFile(true);
@@ -191,7 +191,7 @@ void InteractiveView_hs_triangulation::scene_refresh ()
                                    qDebug() << "5" ;
 
                                    if (flag_triangulation)
-                                      this->update_log();
+                                      this->update_text();
                                    }
 void InteractiveView_hs_triangulation::clear_graphicitems ()
                                    {
@@ -515,39 +515,43 @@ void InteractiveView_hs_triangulation::save_to_file_paths(QString filePath_ids, 
 //size_t position_insert = literal.find("ese: ");
 size_t countlines = 0;
 size_t count_updates = 0;
-void InteractiveView_hs_triangulation::update_log ()
+void InteractiveView_hs_triangulation::update_text()
                                    {
-                                    qDebug() << "InteractiveView_hs_triangulation::update_log: " << hs_vector_log.size()  ;
+                                    qDebug() << "InteractiveView_hs_triangulation::update_text: " << hs_vector_log.size()  ;
+                             
+                                    int dif = hs_vector_log.size() - log_size;
                                     if (flag_triangulation)
-                                     if (int dif = hs_vector_log.size() - log_size > 0)
+                                     if (dif > 0)
                                         {
-                                         count_updates++;
-
-                                         textEditL.setPlainText( textEditL.toPlainText() + QString::fromStdString("\n\n->PROCESS " + std::to_string(count_updates)));
-
+                                         textEditL.setHtml( textEditL.toPlainText() + QString::fromStdString("<br><br><b> Click " + std::to_string(count_updates++) +"<\b>"));
                                          log_size = hs_vector_log.size();
-                                         for (size_t i = hs_vector_log.size() - dif; i < hs_vector_log.size(); ++i)
-                                         // for (size_t i = 0; i < hs_vector_log.size(); ++i)
+
+                                         size_t count_function = 0;
+                                         for (size_t i_function = hs_vector_log.size() - dif-1; i_function < hs_vector_log.size(); ++i_function)
                                              {
-                                              if (i < hs_vps.size())
+                                              if (i_function < hs_vps.size())
                                                  {
                                                      int j_ref = -1;
-                                                     for (size_t j = 0; j < i; ++j)
+                                                     for (size_t j = 0; j < i_function; ++j)
                                                          {
-                                                            if (hs_vps.at(j).second == hs_vps.at(i).second)
+                                                            if (hs_vps.at(j).second == hs_vps.at(i_function).second)
                                                                 j_ref = j;
                                                          }
 
                                                      if (j_ref>=0)
                                                        {
-                                                        //textEditL.setPlainText( "Function Applied: " + QString::fromStdString(hs_vector_log.at(i)) + "\n" + "This is the code of the function : \n" + QString::fromStdString(hs_vps.at(i).second) + "\n" + textEditL.toPlainText());
-                                                        textEditL.setPlainText(textEditL.toPlainText() + "\n"+ QString::fromStdString(hs_vps.at(i).second) );
-                                                        } else if (j_ref < 0)
+                                                         textEditL.setHtml("    " + textEditL.toHtml() + "<br><br><b>   " + QString::number(count_function) + " Function Applied:</b><br>" + QString::fromStdString(hs_vps.at(i_function).second));
+
+                                                     } else if (j_ref < 0)
                                                                  {
                                                                   qDebug()<< "using existing explanation " ;
-                                                                  textEditL.setPlainText(textEditL.toPlainText() + "\n\n" + "Function Applied: " + QString::fromStdString(hs_vector_log.at(i)) + "\n" + "This is the code of the function being aplied: \n" + QString::fromStdString(hs_vps.at(i).second) + "\n" + QString::fromStdString(hs_vps.at(i).first));
-                                                                 }
+                                                                  textEditL.setHtml("    " + textEditL.toHtml() +
+                                                                      "<br><br><b>  " + QString::number(count_function) + " Function:</b><br>" +
+                                                                      QString::fromStdString(hs_vps.at(i_function).second) + "<br>" +
+                                                                      QString::fromStdString(hs_vps.at(i_function).first));
+                                                     }
                                                  }
+                                              count_function++;
                                              }
                                         }
                                     textEditL.moveCursor(QTextCursor::End); // s

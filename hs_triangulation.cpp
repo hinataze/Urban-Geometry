@@ -54,6 +54,8 @@ typedef K::FT FT;
 void hs_triangulation::insertpoint (QPointF pos)
 {
     qDebug() << "hs_triangulation::insertpoint";
+
+    hs_update_log_all("insertpoint", s_insertpoint);
    
     // Convert the mouse click position to world coordinates
     double x = CGAL::to_double(pos.x());

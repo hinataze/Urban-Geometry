@@ -45,6 +45,7 @@
 #include <QMessageBox>
 #include <QIcon>
 #include <QWheelEvent>
+#include <qtextbrowser.h>
 
 
 

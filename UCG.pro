@@ -22,6 +22,7 @@ HEADERS += \
     include/HS_CTriangulationGraphicsItem.h \
     include/HS_Delaunay_triangulation_2.h \
     include/HS_TriangulationGraphicsItem.h \
+    include/HS_Triangulation_2.h \
     include/hs_triangulation.h \
     include/interactive_view.h \
     include/mainwindow.h

@@ -19,7 +19,8 @@
 
 #include <CGAL/license/Triangulation_2.h>
 
-#include <CGAL/Triangulation_2.h>
+//#include <CGAL/Triangulation_2.h>
+#include <include/HS_Triangulation_2.h>
 #include <CGAL/iterator.h>
 #include <CGAL/Object.h>
 
@@ -34,32 +35,7 @@
 
 #include <QDebug>
 
-//passed to mainwindow.h to keep functions without using this header
-static std::vector <std::string> hs_vector_log;
-static std::vector <std::pair <std::string, std::string>> hs_vps;
-static void hs_update_log (std::string s)
-                        {
-                         // qDebug() << "hs_update_log  (" + s + ")" ;
-                          hs_vector_log.push_back(s);
-                          std::vector <std::string> v_copy;
-                         if (hs_vector_log.size()>=100)
-                         {
-                             for (size_t i =  hs_vector_log.size()-50; i <hs_vector_log.size(); ++i)
-                                 v_copy.push_back(hs_vector_log.at(i));
-
-                             hs_vector_log = v_copy;
-                             qDebug() << "resized " << hs_vector_log.size() ;
-
-                         }
-
-                         qDebug() << "hs_vector_log size " <<  hs_vector_log.size() ;
-                        }
-
-static void hs_update_log_all(std::string s , std::string s_text)
-{
-    hs_update_log(s);
-    hs_vps.push_back(std::pair <std::string, std::string>("", s_text));
-}
+#include <hs_execution_log.h>
 
 
 namespace CGAL {
@@ -814,16 +790,20 @@ Delaunay_triangulation_2<Gt,Tds>::look_nearest_neighbor(const Point& p,Face_hand
                                                          look_nearest_neighbor(p, ni, ccw(i), nn);
                                                          look_nearest_neighbor(p, ni, cw(i), nn);
                                                        }
-static std::string s_dual = R"(dual(Face_handle f) const                    // Define a function 'dual' taking a face as a parameter
-{
-  CGAL_precondition(this->_tds.is_face(f));   // Check the precondition: 'f' must be a valid face in the triangulation data structure
-  CGAL_precondition(this->dimension()==2);    // Check the precondition: The dimension of the triangulation must be 2
-  return circumcenter(f);                     // Return the circumcenter of the specified face 'f'
+static std::string s_duala = R"(<br>    dual (Face_handle f) const                   
+<br>            {
+<br>              CGAL_precondition(this->_tds.is_face(f));   
+<br>              CGAL_precondition(this->dimension()==2);   
+<br>              return circumcenter(f);                    
+<br>            }
+<br>            Please check the complete code in file "Delaunay_Triangulation_2.h".
+)";
 
-Please check the complete code in file "Delaunay_Triangulation_2.h".
-You can get it from CGAL on github at https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h
-})";
 
+static std::string s_dualb = R"(<br>          <p> You can get it from CGAL on github at <a href="https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h">https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h </a> <br>Copy and paste the portion of the code you want to know about on ChatGPT, it will explain to you what each line does!")";
+
+
+static std::string s_dual = s_duala + s_dualb;
 
 //DUALITY
 template<class Gt, class Tds>
@@ -839,46 +819,46 @@ Delaunay_triangulation_2<Gt,Tds>::dual(Face_handle f) const
 
 
 
-static std::string s_dual2 = R"(dual(const Edge& e) const                        // Define a function 'dual' taking an edge as a parameter
-{
-  CGAL_precondition(this->_tds.is_edge(e.first, e.second));  // Check precondition: 'e' must be a valid edge in the triangulation data structure
-
-  typedef typename Geom_traits::Line_2        Line;          // Define a line type from the geometric traits
-  typedef typename Geom_traits::Ray_2         Ray;           // Define a ray type from the geometric traits
-
-  CGAL_precondition(!this->is_infinite(e));   // Check precondition: Edge 'e' must not be infinite
-  if (this->dimension() == 1) {               // If the dimension of the triangulation is 1
-    const Point& p = (e.first)->vertex(cw(e.second))->point();  // Get points 'p' and 'q' from the vertices of 'e'
-    const Point& q = (e.first)->vertex(ccw(e.second))->point();
-    Line l = this->geom_traits().construct_bisector_2_object()(p, q);  // Construct a bisector line using 'p' and 'q'
-    return make_object(l);                    // Return the bisector line as a geometric object
-  }
-
-  // Dimension is 2
-  if ((!this->is_infinite(e.first)) &&
-      (!this->is_infinite(e.first->neighbor(e.second)))) {
-    Segment s = this->geom_traits().construct_segment_2_object()  // If neither face is infinite, construct a segment
-                      (dual(e.first), dual(e.first->neighbor(e.second)));
-    return make_object(s);                   // Return the segment as a geometric object
-  }
-
-  // One of the adjacent faces is infinite
-  Face_handle f; int i;
-  if (this->is_infinite(e.first)) {          // If the first face is infinite, set 'f' and 'i' accordingly
-    f = e.first->neighbor(e.second); i = f->index(e.first);
-  } else {
-    f = e.first; i = e.second;               // If the second face is infinite, set 'f' and 'i' accordingly
-  }
-
-  const Point& p = f->vertex(cw(i))->point();  // Get points 'p' and 'q' from the vertices of 'f'
-  const Point& q = f->vertex(ccw(i))->point();
-  Line l = this->geom_traits().construct_bisector_2_object()(p, q);  // Construct a bisector line using 'p' and 'q'
-  Ray r = this->geom_traits().construct_ray_2_object()(dual(f), l);   // Construct a ray using the dual of 'f' and the bisector line
-  return make_object(r);                      // Return the ray as a geometric object
-
-Please check the complete code in file "Delaunay_Triangulation_2.h".
-You can get it from CGAL on github at https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h
-}
+static std::string s_dual2 = R"(<br>    dual(const Edge& e) const                      
+<br>            {
+<br>              CGAL_precondition(this->_tds.is_edge(e.first, e.second)); 
+<br>            
+<br>              typedef typename Geom_traits::Line_2        Line;         
+<br>              typedef typename Geom_traits::Ray_2         Ray;          
+<br>            
+<br>              CGAL_precondition(!this->is_infinite(e));   
+<br>              if (this->dimension() == 1) 
+<br>                 {              
+<br>                   const Point& p = (e.first)->vertex(cw(e.second))->point();  
+<br>                   const Point& q = (e.first)->vertex(ccw(e.second))->point();
+<br>                   Line l = this->geom_traits().construct_bisector_2_object()(p, q); 
+<br>                   return make_object(l);                   
+<br>                 }
+<br>            
+<br>              // Dimension is 2
+<br>              if ((!this->is_infinite(e.first)) &&
+<br>                  (!this->is_infinite(e.first->neighbor(e.second)))) {
+<br>                Segment s = this->geom_traits().construct_segment_2_object() 
+<br>                                  (dual(e.first), dual(e.first->neighbor(e.second)));
+<br>                return make_object(s);                  
+<br>            
+<br>              Face_handle f; int i;
+<br>              if (this->is_infinite(e.first)) {        
+<br>                f = e.first->neighbor(e.second); i = f->index(e.first);
+<br>              } else {
+<br>                f = e.first; i = e.second;               
+<br>              }
+<br>            
+<br>              const Point& p = f->vertex(cw(i))->point(); 
+<br>              const Point& q = f->vertex(ccw(i))->point();
+<br>              Line l = this->geom_traits().construct_bisector_2_object()(p, q);  
+<br>              Ray r = this->geom_traits().construct_ray_2_object()(dual(f), l);  
+<br>              return make_object(r);                     
+<br>            
+<br>            Please check the complete code in file "Delaunay_Triangulation_2.h".
+<br>            You can get it from CGAL on github at <a href="https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h"> https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h </a>
+<br>            Copy and paste the portion of the code you want to know about on ChatGPT, it will explain to you what each line does!
+<br>            }
 )";
 
 
@@ -944,16 +924,18 @@ Delaunay_triangulation_2<Gt,Tds>::dual(const Finite_edges_iterator& ei) const
 //  INSERT
 
 
-static std::string s_insert = R"(insert(const Point& p, Face_handle start)  // Declare a function 'insert' taking a point and a starting face
-{
-  Locate_type lt;                  // Declare a variable to store locate type
-  int li;                          // Declare a variable to store the index
-  Face_handle loc = this->locate(p, lt, li, start);  // Locate the point in the triangulation, store the result in 'loc'
-  return insert(p, lt, loc, li);   // Call the insert function with the parameters and return the result
-
-Please check the complete code in file "Delaunay_Triangulation_2.h".
-You can get it from CGAL on github at https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h
-})";
+static std::string s_insert = R"(<br>   insert(const Point& p, Face_handle start)
+<br>            {
+<br>              Locate_type lt; 
+<br>              int li;                          
+<br>              Face_handle loc = this->locate(p, lt, li, start); 
+<br>              return insert(p, lt, loc, li);  
+<br>            }
+<br>            
+<br>            Please check the complete code in file "Delaunay_Triangulation_2.h".
+<br>            You can get it from CGAL on github at <a href="https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h"> https://github.com/CGAL/cgal/blob/master/Triangulation_2/include/CGAL/Delaunay_triangulation_2.h </a>
+<br>            Copy and paste the portion of the code you want to know about on ChatGPT, it will explain to you what each line does!
+)";
 template < class Gt, class Tds >
 inline
 typename Delaunay_triangulation_2<Gt,Tds>::Vertex_handle

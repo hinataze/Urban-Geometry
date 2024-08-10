@@ -6,6 +6,7 @@
 #define INTERACTIVE_VIEW_H
 
 #include <include/mainwindow.h>
+#include <hs_execution_log.h>
 
 #include <boost/graph/adjacency_list.hpp>
 
@@ -39,9 +40,6 @@ class InteractiveView_hs_triangulation : public QGraphicsView
                                    Q_OBJECT
                                    friend class MainWindow;
 
-                                   friend void deletepoint(QPoint, InteractiveView_hs_triangulation*);
-                                   friend void insertpoint(QPoint, InteractiveView_hs_triangulation*);
-
                                    public:
                                        MainWindow& ref_mainwindow;
 
@@ -49,8 +47,8 @@ class InteractiveView_hs_triangulation : public QGraphicsView
 
                                        size_t log_size = 0;
 
-                                       QPlainTextEdit  textEditL;
-                                       QPlainTextEdit  textEditR;
+                                       QTextEdit   textEditL;
+                                       QTextEdit   textEditR;
 
                                        QString  message_qs_DT_start;
                                        QString  message_qs_DT;
@@ -105,13 +103,11 @@ class InteractiveView_hs_triangulation : public QGraphicsView
                                        void set_textitems_ct();
                                        void scene_add_textitems();
                                        void setpens ();
-                                       void update_log();
+                                       void update_text();
 
                                        CGAL::Qt::GraphicsViewNavigation navigation;       
                                     
-                                      void shortest_path();
-                                      void save_paths_coordinates (std::vector <CDT> & v_paths);
-                                      void save_paths_indices (std::vector <std::vector<size_t>> & v_paths_ids);
+                                  
 
                                       void save_to_file_paths (QString filePath_ids, QString filePath_coord);
 
@@ -179,63 +175,47 @@ static QString message_open = "<p>Open your own files! This app accepts files:<b
 "PS: For CDT you need one file with the nodes and one file with the links!<p>";
 
 
-static std::string s_deletepoint = R"(
+static std::string s_deletepoint = R"( <p style = "color: rgb(255, 51, 221);"> (This function doesn't actually delete the point, it creates a new triangulation object with all the points except for the one you clicked on!) </p>
+<br>    void deletepoint (QPoint mousePoint , InteractiveView_hs_triangulation * that) 
+<br>                 {
+<br>                     QPointF scenePoint = that->mapToScene(mousePoint); 
+<br>                     Point queryPoint(scenePoint.x(), scenePoint.y()); 
+<br>                     Delaunay::Vertex_handle closestVertex = nullptr;
+<br>                     if (that->dt_.finite_vertices_begin() != that->dt_.finite_vertices_end())
+<br>                         find_nearest_point(closestVertex, queryPoint, that->dt_);
+<br>                         else
+<br>                             QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
+<br>    
+<br>             
+<br>                     if (closestVertex != nullptr && closestVertex->is_valid())
+<br>                        {
+<br>                            auto point = closestVertex->point();
+<br>                            Triangulation dt_copy;
+<br>                            for (auto vertex = that->dt_.finite_vertices_begin(); vertex != that->dt_.finite_vertices_end(); ++vertex)
+<br>                                {
+<br>                                    if (vertex->point() != point)
+<br>                                       {
+<br>                                           dt_copy.insert(vertex->point());
+<br>                                       }
+<br>                                }
+<br>                            that->dt_ = dt_copy;
+<br>                        }
+<br>                        else if (closestVertex == nullptr)
+<br>                                {
+<br>                                 QMessageBox::warning(nullptr, "Warning", "No Point was found.");
+<br>                                }
+<br>                 }
+)";
 
-// this function doesnt actually delete the point, it creates a new triangulation object with all the point except for the one you clicked on!
-void deletepoint (QPoint mousePoint , InteractiveView_hs_triangulation * that) 
-{
-    // Convert the clicked mouse point to scene coordinates
-    QPointF scenePoint = that->mapToScene(mousePoint); 
-    
-    // Create a query point from the scene coordinates
-    Point queryPoint(scenePoint.x(), scenePoint.y()); 
 
-    // Variable to hold the closest vertex to the clicked point
-    Delaunay::Vertex_handle closestVertex = nullptr;
-    // Check if there are any finite vertices in the triangulation
-    if (that->dt_.finite_vertices_begin() != that->dt_.finite_vertices_end())
-    {
-        // Find the nearest point in the triangulation to the query point
-        find_nearest_point(closestVertex, queryPoint, that->dt_);
-    }
-    else
-    {
-        // Show a warning message if the network is empty
-        QMessageBox::warning(nullptr, "Warning", "Network is empty. Please open file first.");
-    }
-
-    // Check if the closest vertex is valid
-    if (closestVertex != nullptr && closestVertex->is_valid())
-    {
-        // Debugging output: print the coordinates of the vertex to be deleted
-        qDebug() << "delete vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y();
-
-        // Store the point of the vertex to be deleted
-        auto point = closestVertex->point();
-        // Create a new triangulation object to hold the remaining points
-        Triangulation dt_copy;
-        // Iterate through all the finite vertices in the current triangulation
-        for (auto vertex = that->dt_.finite_vertices_begin(); vertex != that->dt_.finite_vertices_end(); ++vertex)
-        {
-            // Add all points except for the one to be deleted to the new triangulation
-            if (vertex->point() != point)
-            {
-                dt_copy.insert(vertex->point());
-            }
-        }
-        // Replace the current triangulation with the new one
-        that->dt_ = dt_copy;
-        // Debugging output: confirm the vertex has been deleted
-        qDebug() << "vertex x" << closestVertex->point().x() << " y " << closestVertex->point().y() << "deleted";
-        qDebug() << "vertex x" << point.x() << " y " << point.y() << "deleted!!";
-    }
-    else if (closestVertex == nullptr)
-    {
-        // Show a warning message if no point was found
-        QMessageBox::warning(nullptr, "Warning", "No Point was found.");
-    }
-})";
-
+static std::string s_insertpoint = R"(
+<br>void hs_triangulation::insertpoint (QPointF pos)
+<br>     {
+<br>         double x = CGAL::to_double(pos.x());
+<br>         double y = CGAL::to_double(pos.y());
+<br>         this->dt_->insert(Point_2(x, y));
+<br>     }
+)";
 
 
 
