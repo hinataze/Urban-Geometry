@@ -21,13 +21,12 @@
 #include <string>
 
 
-const char* rs = R"(Welcome to the urban geometry app!
+static std::string rs = R"(Welcome to the urban geometry app!
 
 Here you get to test and understand some fundamental algorithms used in urban analysis and how the underlying C++ computer code works!
 
-We're starting with Delaunay Triangulations and Shortest Paths.
-
-HINT: Open your own files! This app accepts files in .geojson and .txt.)";
+We're starting with Delaunay Triangulations and Constrained Delaunay Triangulations, that allow us to find the Shortest Paths.
+)";
 
 
 int main(int argc, char *argv[])
@@ -94,8 +93,8 @@ int main(int argc, char *argv[])
 
 
 
-            QString  s = rs;
-            QMessageBox::information(nullptr, "Welcome!", rs);
+            QString  s = QString::fromStdString(rs);
+            QMessageBox::information(nullptr, "Welcome!", s);
 
             QMessageBox::information(nullptr, "Colaborate!", "This is an open project, so any problems, comments or sugestions, please send them through the direct help email above!");
 

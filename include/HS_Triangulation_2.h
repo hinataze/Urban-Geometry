@@ -61,7 +61,7 @@
 #include <hs_execution_log.h>
 
 
-static std::string s_locate = R"(   Face_handle locate (const Point& p, Locate_type& lt, int& li, Face_handle start = Face_handle()) const
+static std::string s_locate = R"(<br>   Face_handle locate (const Point& p, Locate_type& lt, int& li, Face_handle start = Face_handle()) const
  <br>           {
  <br>                 typedef Triangulation_structural_filtering_traits<Geom_traits> TSFT;
  <br>                 typedef typename internal::Structural_filtering_selector_2<TSFT::Use_structural_filtering_tag::value >::Tag Should_filter_tag;

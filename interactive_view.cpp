@@ -41,7 +41,7 @@ InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, De
 
                                 this->message_qs_DT = message_r_DT;
                                 this->message_qs_CDT = message_r_CDT;
-                                this->message_qs_open = message_open;
+                                this->message_qs_open = QString::fromStdString(message_open);
 
                                 this->message_qs_DT_start = message_r_DT_start;
 
@@ -67,7 +67,7 @@ void InteractiveView_hs_triangulation::mousePressEvent(QMouseEvent* event)
                                                 {  
                                                    if (event->button() == Qt::LeftButton)
                                                        {
-
+                                                       flag_click_lr = 0;
                                                        QPointF pos = this->mapToScene(event->pos());
 
                                                        //CHANGE DT
@@ -76,6 +76,7 @@ void InteractiveView_hs_triangulation::mousePressEvent(QMouseEvent* event)
                                                        }
                                                        else if (event->button() == Qt::RightButton)
                                                                {  
+                                                               flag_click_lr = 1;
                                                                hst->deletepoint( event->pos(), this); 
                                                                }
                                                                else if (event->button() == Qt::MiddleButton)
@@ -520,10 +521,19 @@ void InteractiveView_hs_triangulation::update_text()
                                     qDebug() << "InteractiveView_hs_triangulation::update_text: " << hs_vector_log.size()  ;
                              
                                     int dif = hs_vector_log.size() - log_size;
-                                    if (flag_triangulation)
+
+                                    std::string s_click_type;
+                                    
+                                    if (log_size)
+                                        s_click_type = flag_click_lr ? "Right" : "Left";
+
+                                   
+                                    if (!flag_start && flag_triangulation)
                                      if (dif > 0)
                                         {
-                                         textEditL.setHtml( textEditL.toPlainText() + QString::fromStdString("<br><br><b> Click " + std::to_string(count_updates++) +"<\b>"));
+                                        
+                                         if(count_updates)
+                                         textEditL.setHtml( textEditL.toHtml() + QString::fromStdString("<br><br><b>" + s_click_type + " Click "+ std::to_string(count_updates) +"<\b>"));
                                          log_size = hs_vector_log.size();
 
                                          size_t count_function = 0;
@@ -540,21 +550,25 @@ void InteractiveView_hs_triangulation::update_text()
 
                                                      if (j_ref>=0)
                                                        {
-                                                         textEditL.setHtml("    " + textEditL.toHtml() + "<br><br><b>   " + QString::number(count_function) + " Function Applied:</b><br>" + QString::fromStdString(hs_vps.at(i_function).second));
+                                                         textEditL.setHtml("    " + textEditL.toHtml() + "<br><br><i>   " + QString::number(count_function) + " Function Applied:</i><br>" + QString::fromStdString(hs_vps.at(i_function).second));
 
                                                      } else if (j_ref < 0)
                                                                  {
                                                                   qDebug()<< "using existing explanation " ;
                                                                   textEditL.setHtml("    " + textEditL.toHtml() +
-                                                                      "<br><br><b>  " + QString::number(count_function) + " Function:</b><br>" +
+                                                                      "<br><br><i>  " + QString::number(count_function) + " Function:</i><br>" +
                                                                       QString::fromStdString(hs_vps.at(i_function).second) + "<br>" +
                                                                       QString::fromStdString(hs_vps.at(i_function).first));
                                                      }
                                                  }
                                               count_function++;
                                              }
+                                         count_updates++;
                                         }
-                                    textEditL.moveCursor(QTextCursor::End); // s
+
+                                   textEditL.moveCursor(QTextCursor::End); // s
+
+                                   flag_start = false;
                                    }
 
 QGraphicsTextItem*  

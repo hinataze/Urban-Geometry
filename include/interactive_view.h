@@ -64,6 +64,9 @@ class InteractiveView_hs_triangulation : public QGraphicsView
                                        bool flag_scale_first = true;
 
 
+                                       bool flag_click_lr = 0;
+                                       bool flag_start = true;
+
                                        bool flag_triangulation = 1;
                                        bool flag_edit_triangulation = 1;
                                        bool flag_voronoi = 0;
@@ -129,13 +132,13 @@ static const char* message_r_DT_start = R"(
 You are in Delaunay Triangulation (DT) Mode.
 
 In this mode you can add / remove points by left / right clicking on the canvas.
-You can also see the code that runs everytime you insert or remove a point (limited).
+You can also see the code that runs everytime you insert or remove a point!
 
 You can save the final triangulation to a file and later open it again and start from there!
 
-HINT: Make sure to toggle View > Voronoi to check the corresponding Voronoi diagram!
+HINT 1: Make sure to toggle View > Voronoi to check the corresponding Voronoi diagram!
 
-(You can switch modes in the Menu Bar) 
+HINT 2: Switch to Constrained Delaunay Triangulation in the Menu Bar!
 )";
 
 
@@ -155,7 +158,9 @@ Constrained Delaunay Triangulation (CDT):
 
 In this mode you can select two points and calculate the Shortest Path between them. Just click on the image and try.
 
-HINT: You can save the shortest paths you calculated to files!
+HINT 1: Open the nodes' and the links' files first!
+
+HINT 2: You can save the you shortest paths to files!
 )";
 
 static const char* message_r_open = R"(
@@ -169,10 +174,13 @@ Check the "Sample Files" in this App's folder!
 )";
 
 
-static QString message_open = "<p>Open your own files! This app accepts files:<br>"
-"In geojson format, check sample files in <a href=\"https://www.geospatial.jp/ckan/dataset/0401\">www.geospatial.jp</a>.<br>"
-"In txt format, check the 'Sample Files' in this App's folder.</br>"
-"PS: For CDT you need one file with the nodes and one file with the links!<p>";
+static std::string message_open = R"(<p>Open your own files! This app accepts files : 
+
+<br>In geojson format, check sample files in <a href=\"https://www.geospatial.jp/ckan/dataset/0401\">www.geospatial.jp</a>.
+
+<br>In txt format, check the 'Sample Files' in this App's folder.
+
+<br><br>HINT: For CDT you need one file with the nodes and one file with the links!)";
 
 
 static std::string s_deletepoint = R"( <p style = "color: rgb(255, 51, 221);"> (This function doesn't actually delete the point, it creates a new triangulation object with all the points except for the one you clicked on!) </p>

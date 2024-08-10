@@ -99,7 +99,7 @@ public:
   Delaunay_triangulation_2(
          const Delaunay_triangulation_2<Gt,Tds> &tr)
        : Triangulation_2<Gt,Tds>(tr)
-  {   CGAL_postcondition(is_valid()); hs_update_log ("Delaunay_triangulation_2 Constructor Copy ?");hs_vps.push_back(std::pair<std::string, std::string> ("Delaunay_triangulation_2 Copy Constructor","CGAL_postcondition(is_valid())"));}
+  {   CGAL_postcondition(is_valid()); hs_update_log ("Delaunay_triangulation_2 Constructor Copy ?");hs_vps.push_back(std::pair<std::string, std::string> ("Delaunay_triangulation_2 Copy Constructor","<br>CGAL_postcondition(is_valid())"));}
 
   Delaunay_triangulation_2(Delaunay_triangulation_2&&) = default;
   Delaunay_triangulation_2& operator=(const Delaunay_triangulation_2&) = default;
