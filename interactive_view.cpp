@@ -275,6 +275,7 @@ void InteractiveView_hs_triangulation::clear_graphicitems ()
                                         hst->ctextItems.clear();
 
                                     qDebug() << "debug voronoi";
+                                    if (hst->voronoiItem != nullptr)
                                     this->ref_mainwindow.scene_.removeItem(hst->voronoiItem.get());
 
                                     //qDebug() << "5.1 ";

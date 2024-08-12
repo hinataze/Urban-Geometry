@@ -87,50 +87,9 @@ int main(int argc, char* argv[])
 
     QString s = QString::fromStdString(rs);
 
-    // Create a QMessageBox
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("Welcome!");
+   
 
-    // Remove the default text area of the QMessageBox to make room for custom content
-    msgBox.setText("");  // Keep this empty, we'll use custom labels
-
-    // Create a label to display the image
-    QLabel* imageLabel = new QLabel(&msgBox);
-    QString imagePath = sourceDir + "/welcome_image.png";
-    QPixmap pixmap(imagePath);
-
-    // Check if the image is successfully loaded
-    if (pixmap.isNull()) {
-        qDebug() << "Failed to load image at:" << imagePath;
-    }
-    else {
-        imageLabel->setPixmap(pixmap);
-        imageLabel->setAlignment(Qt::AlignCenter); // Center the image
-    }
-
-    // Create a text label for the message
-    QLabel* textLabel = new QLabel(s, &msgBox);
-    textLabel->setAlignment(Qt::AlignCenter); // Center the text
-    textLabel->setWordWrap(true); // Wrap the text if it's too long
-
-    // Create a vertical layout and add the image and text labels
-    QVBoxLayout* customLayout = new QVBoxLayout;
-    customLayout->addWidget(imageLabel);
-    customLayout->addWidget(textLabel);
-
-    // Create a QWidget to contain the custom layout and set it as the custom content for the message box
-    QWidget* customWidget = new QWidget(&msgBox);
-    customWidget->setLayout(customLayout);
-
-    // Add the custom content to the message box
-    msgBox.layout()->addWidget(customWidget);
-
-    // Ensure the QMessageBox resizes to fit the content
-    msgBox.setMinimumSize(pixmap.width() + 20, pixmap.height() + textLabel->sizeHint().height() + 100);
-
-    // Show the message box
-    msgBox.exec();
-
+    QMessageBox::information(nullptr, "Welcome!", s);
 
 
     QMessageBox::information(nullptr, "Colaborate!", "This is an open project, so any problems, comments or suggestions, please send them through the direct help email above!");

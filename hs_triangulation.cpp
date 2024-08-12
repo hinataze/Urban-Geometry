@@ -27,12 +27,14 @@ typedef K::FT FT;
             }
         
             // Initialize voronoiItem with error handling
+            if (this->dt_ != nullptr)
             voronoiItem = std::make_shared<CGAL::Qt::VoronoiGraphicsItem<Delaunay>>(this->dt_.get());
             if (!voronoiItem) {
                 throw std::runtime_error("Failed to initialize VoronoiGraphicsItem");
             }
         
             // Initialize ctriangulationItem with error handling
+            if (this->cdt_ != nullptr)
             ctriangulationItem = std::make_shared<CGAL::Qt::CTriangulationGraphicsItem<CDT>>(this->cdt_.get(), true);
             if (!ctriangulationItem) {
                 throw std::runtime_error("Failed to initialize CTriangulationGraphicsItem");
