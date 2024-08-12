@@ -52,7 +52,7 @@ public:
     {
         if (ImageInterface->objectName().isEmpty())
             ImageInterface->setObjectName(QString::fromUtf8("ImageInterface"));
-        ImageInterface->resize(484, 447);
+        ImageInterface->resize(830, 447);
         vboxLayout = new QVBoxLayout(ImageInterface);
         vboxLayout->setSpacing(6);
         vboxLayout->setObjectName(QString::fromUtf8("vboxLayout"));
@@ -136,7 +136,7 @@ public:
 
         vboxLayout->addWidget(expandFrustum);
 
-        spacerItem2 = new QSpacerItem(20, 16, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        spacerItem2 = new QSpacerItem(20, 16, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
         vboxLayout->addItem(spacerItem2);
 

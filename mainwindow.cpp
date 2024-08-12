@@ -44,7 +44,6 @@ MainWindow::MainWindow(QWidget *parent, QApplication *app) : QMainWindow(parent)
              this->view_voronoi_action = menu_view->addAction("Voronoi");
              QObject::connect(view_voronoi_action, &QAction::triggered, app, [&]() {this->turn_flag_view(this->ptr_iv->flag_voronoi);});
 
-              
 
 
               //sync with constructor
@@ -73,7 +72,6 @@ MainWindow::~MainWindow()
               qDebug() << "MainWindow::~MainWindow" ;
               //ui->setupUi(this);
               delete ui;
-              setMouseTracking(true);
             }
 
 
@@ -154,9 +152,9 @@ void MainWindow::turn_flag_view(bool& flag)
         }
 
         //VORONOI
-        if (this->ptr_iv->flag_voronoi)
+        if (this->ptr_iv->flag_voronoi && this->ptr_iv->hst->voronoiItem != nullptr)
             this->scene_.addItem(this->ptr_iv->hst->voronoiItem.get());
-        else if (!this->ptr_iv->flag_voronoi)
+        else if (!this->ptr_iv->flag_voronoi && this->ptr_iv->hst->voronoiItem != nullptr)
             this->scene_.removeItem(this->ptr_iv->hst->voronoiItem.get());
     }
 
@@ -637,19 +635,8 @@ void MainWindow::save_to_file_paths (QString filePath_ids, QString filePath_coor
 
 
 
-void MainWindow::paintEvent(QPaintEvent* event) 
-{
-    QMainWindow::paintEvent(event);
-    QPainter painter(this);
-    painter.setPen(Qt::black);
-    painter.drawText(cursorPosition.x() + 15, cursorPosition.y() - 15, "Cursor Coordinates: " + QString::number(cursorPosition.x()) + ", " + QString::number(cursorPosition.y()));
-}
 
 
-void MainWindow::mouseMoveEvent(QMouseEvent* event) {
-    cursorPosition = event->pos();
-    update(); // Trigger a repaint of the QMainWindow
-}
 
 
 

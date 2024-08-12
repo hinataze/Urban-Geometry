@@ -13,6 +13,9 @@ InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, De
                                 qDebug() <<"InteractiveView_hs_triangulation::InteractiveView_hs_triangulation ";
                                 grabGesture(Qt::PinchGesture);
 
+                                setMouseTracking(true);
+
+
                                 hst = std::make_shared <hs_triangulation>(cdt, dt);
 
                                 this->ref_mainwindow.ptr_iv = this;
@@ -50,6 +53,14 @@ InteractiveView_hs_triangulation::InteractiveView_hs_triangulation (CDT &cdt, De
                                 qDebug() << "InteractiveView_hs_triangulation::InteractiveView_hs_triangulation exit";
    
                             }
+
+void InteractiveView_hs_triangulation::paintEvent(QPaintEvent* event)
+{
+    QGraphicsView::paintEvent(event);
+    QPainter painter(viewport());
+    painter.setPen(Qt::black);
+    painter.drawText(cursorPosition.x(), cursorPosition.y(), QString::number(canvasPosition.x()) + ", " + QString::number(canvasPosition.y()));
+}
 
 
 void InteractiveView_hs_triangulation::mousePressEvent(QMouseEvent* event)
@@ -161,6 +172,12 @@ void InteractiveView_hs_triangulation::mouseReleaseEvent (QMouseEvent* event)  {
        }
     }
 void InteractiveView_hs_triangulation::mouseMoveEvent (QMouseEvent* event)  {
+
+       cursorPosition = event->pos();
+       canvasPosition = mapToScene(cursorPosition);
+
+       update();
+
        if (panning) {
                    // Pan the view
                    QPointF delta = mapToScene(lastPanPos.toPoint()) - mapToScene(event->pos());
@@ -257,7 +274,7 @@ void InteractiveView_hs_triangulation::clear_graphicitems ()
                                     if (!hst->ctextItems.empty())
                                         hst->ctextItems.clear();
 
-                                    //qDebug() << "5 ";
+                                    qDebug() << "debug voronoi";
                                     this->ref_mainwindow.scene_.removeItem(hst->voronoiItem.get());
 
                                     //qDebug() << "5.1 ";
@@ -280,6 +297,7 @@ void InteractiveView_hs_triangulation::create_graphicitems ()
                                             hst->sp.v_cdt_gi.back()->setZValue(1);
                                         }
 
+                                    if(this->hst->dt_ != nullptr)
                                     hst->voronoiItem = std::make_shared <CGAL::Qt::VoronoiGraphicsItem<Delaunay>> (this->hst->dt_.get());
                                    }
 void InteractiveView_hs_triangulation::scene_add_graphicitems ()
@@ -322,6 +340,9 @@ void InteractiveView_hs_triangulation::scene_add_graphicitems ()
 
                                     if (this->flag_voronoi)
                                        {
+                                        qDebug() << "debug voronoi";
+
+                                        if(hst->voronoiItem != nullptr)
                                          ref_mainwindow.scene_.addItem(hst->voronoiItem.get());
                                          qDebug() << "added voronoi ";
                                        }

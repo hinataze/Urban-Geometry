@@ -87,6 +87,11 @@ class InteractiveView_hs_triangulation : public QGraphicsView
 
                                    protected:
 
+                                       QPoint cursorPosition;
+                                       QPointF canvasPosition;
+
+                                       void paintEvent(QPaintEvent* event) override; //if in window class was painting in the window frame itself
+
                                        void wheelEvent(QWheelEvent *event) override;
                                        void mousePressEvent (QMouseEvent* event) override;
                                        void keyPressEvent (QKeyEvent *event) override;
@@ -139,7 +144,9 @@ You can save the final triangulation to a file and later open it again and start
 
 HINT 1: Make sure to toggle View > Voronoi to check the corresponding Voronoi diagram!
 
-HINT 2: Switch to Constrained Delaunay Triangulation in the Menu Bar!
+HINT 2: Scroll up and down in the code panel to see the code that runs everytime you click! 
+
+HINT 3: Switch to Constrained Delaunay Triangulation in the Menu Bar!
 )";
 
 

@@ -48,6 +48,9 @@
 #include <qtextbrowser.h>
 
 
+#include <QGraphicsBlurEffect>
+
+
 
 
 
@@ -100,15 +103,13 @@ class MainWindow : public QMainWindow
                     void save_files();
 
                     protected:
-                    void paintEvent(QPaintEvent* event) override;
-                    void mouseMoveEvent(QMouseEvent* event) override;
-
+         
                     private:
 
                      Ui::MainWindow *ui; //allows to access the ui elements
                      QLabel * statusLabel;
                      QGraphicsScene scene_;
-                     QPoint cursorPosition;
+                     
 
                      //menu bar
                      QMenuBar* menu_bar;
